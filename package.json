@@ -1,6 +1,6 @@
 {
   "name": "@redfoxxo/burrow",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes",
   "keywords": [
     "mcp",
