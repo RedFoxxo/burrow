@@ -1,0 +1,41 @@
+{
+  "name": "@redfoxxo/burrow",
+  "version": "1.0.0",
+  "description": "MCP server for LeafWiki: read, search, write and organize wiki pages with optimistic concurrency.",
+  "type": "module",
+  "bin": {
+    "burrow": "build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:wiki": "vitest run --config vitest.wiki.config.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RedFoxxo/burrow.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
