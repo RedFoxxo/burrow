@@ -4,14 +4,10 @@ import type { Page } from '../wiki/types.js'
 import type { ToolContext } from './context.js'
 import { failure } from './respond.js'
 
-export const pageRef = z.string().trim().min(1).describe('Page id, or path like docs/runbooks/deploy')
-export const parentRef = z
-  .string()
-  .trim()
-  .optional()
-  .describe('Parent page id or path; omit for the top level')
-export const kind = z.enum(['page', 'section']).describe('page holds content; section is a folder-like page for children')
-export const version = z.string().trim().min(1).describe('The version from your last read of this page; a newer change by someone else rejects the call')
+export const pageRef = z.string().trim().min(1).describe('Page id or path')
+export const parentRef = z.string().trim().optional().describe('Parent id or path; omit for the top level')
+export const kind = z.enum(['page', 'section']).describe('section: a folder-like page for children')
+export const version = z.string().trim().min(1).describe('version from your last read of the page')
 
 /** Resolves a page reference, or answers with why it could not. */
 export async function withPage(ctx: ToolContext, ref: string, then: (page: Page) => Promise<CallToolResult>): Promise<CallToolResult> {

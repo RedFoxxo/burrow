@@ -1,7 +1,22 @@
 {
   "name": "@redfoxxo/burrow",
   "version": "1.0.0",
-  "description": "MCP server for LeafWiki: read, search, write and organize wiki pages with optimistic concurrency.",
+  "description": "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "leafwiki",
+    "wiki",
+    "markdown",
+    "ai",
+    "claude",
+    "opencode"
+  ],
+  "homepage": "https://github.com/RedFoxxo/burrow#readme",
+  "bugs": {
+    "url": "https://github.com/RedFoxxo/burrow/issues"
+  },
   "type": "module",
   "bin": {
     "burrow": "build/index.js"
@@ -30,12 +45,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
-    "zod": "4.6.5"
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "22.20.4",
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.1.1"
   }
 }

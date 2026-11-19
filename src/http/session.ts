@@ -35,7 +35,8 @@ const REFRESH_MARGIN_MS = 60_000
  * does: session cookies plus a CSRF token echoed in `X-CSRF-Token` on every
  * change. Refreshes the access token before it runs out, and signs in again
  * once when LeafWiki answers 401 (nothing was done then, so any request can be
- * repeated). Every outcome is a `Result`.
+ * repeated). Never follows redirects, so cookies and the password only go to
+ * `baseUrl`. Every outcome is a `Result`.
  */
 export class Session {
   readonly baseUrl: string
@@ -51,6 +52,14 @@ export class Session {
   private expiresAt = 0
   private authDisabled = false
   private signingIn: Promise<Err | undefined> | undefined
+  /** Counts successful sign-ins and refreshes, to tell a stale 401 from a lost session. */
+  private signIns = 0
+  /**
+   * A sign-in failure that repeats until the configuration changes (wrong
+   * password, TOTP account): not retried, since every failed attempt counts
+   * toward LeafWiki's account lockout.
+   */
+  private rejected: Err | undefined
 
   constructor(options: SessionOptions) {
     this.baseUrl = options.baseUrl
@@ -68,13 +77,22 @@ export class Session {
   }
 
   async request<T>(spec: RequestSpec): Promise<Result<T>> {
+    const target = `${this.baseUrl}/api${spec.path}`
+    if (URL.parse(target)?.href !== target) {
+      return err(0, `Not sent: "${spec.path}" would not reach the intended LeafWiki route`, '', { request: `${spec.method} /api${spec.path}` })
+    }
     const ready = await this.ensureSignedIn()
     if (ready) return ready
+    const signIns = this.signIns
     const first = await this.send<T>(spec)
     if (first.ok || first.status !== 401 || this.authDisabled) return first
-    this.expiresAt = 0
-    const again = await this.signIn(true)
-    return again ?? this.send<T>(spec)
+    // A sign-in finished while this call was under way: its cookies were old, the session is fine.
+    if (signIns === this.signIns) {
+      this.expiresAt = 0
+      const again = await this.signIn(true)
+      if (again) return again
+    }
+    return this.send<T>(spec)
   }
 
   private async ensureSignedIn(): Promise<Err | undefined> {
@@ -85,6 +103,7 @@ export class Session {
 
   /** One sign-in at a time: parallel tool calls wait for the same one. */
   private signIn(refreshFirst: boolean): Promise<Err | undefined> {
+    if (this.rejected) return Promise.resolve(this.rejected)
     this.signingIn ??= this.doSignIn(refreshFirst).finally(() => {
       this.signingIn = undefined
     })
@@ -96,6 +115,7 @@ export class Session {
       const refreshed = await this.send<{ accessTokenExpiresAt?: number }>({ method: 'POST', path: '/auth/refresh-token' })
       if (refreshed.ok) {
         this.setExpiry(refreshed.data.accessTokenExpiresAt)
+        this.signIns++
         return undefined
       }
       this.log(`refresh failed (${refreshed.status}), signing in again`)
@@ -109,7 +129,8 @@ export class Session {
       return undefined
     }
     if (!this.username) {
-      return err(0, 'This wiki needs sign-in: set LEAFWIKI_USERNAME and LEAFWIKI_PASSWORD, then restart the MCP client')
+      this.rejected = err(0, 'This wiki needs sign-in: set LEAFWIKI_USERNAME and LEAFWIKI_PASSWORD, then restart the MCP client')
+      return this.rejected
     }
 
     const login = await this.send<{ requiresTotp?: boolean; accessTokenExpiresAt?: number }>({
@@ -118,18 +139,22 @@ export class Session {
       json: { identifier: this.username, password: this.password },
     })
     if (!login.ok) {
-      if (login.status === 401) {
-        return { ...login, message: `Sign-in as "${this.username}" failed: ${login.message}. Check LEAFWIKI_USERNAME and LEAFWIKI_PASSWORD` }
+      if (login.code !== 'auth_invalid_credentials') return login
+      this.rejected = {
+        ...login,
+        message: `Sign-in as "${this.username}" failed: ${login.message}. Check LEAFWIKI_USERNAME and LEAFWIKI_PASSWORD, then restart the MCP client`,
       }
-      return login
+      return this.rejected
     }
     if (login.data.requiresTotp) {
-      return err(
+      this.rejected = err(
         0,
         `The account "${this.username}" uses two-factor codes (TOTP), which burrow cannot enter. Use an account without TOTP`,
       )
+      return this.rejected
     }
     this.setExpiry(login.data.accessTokenExpiresAt)
+    this.signIns++
     this.log(`signed in as ${this.username}`)
     return undefined
   }
@@ -165,6 +190,7 @@ export class Session {
     }
 
     let response: Response
+    let text: string
     try {
       response = await this.fetchImpl(this.url(spec), {
         method: spec.method,
@@ -173,14 +199,14 @@ export class Session {
         redirect: 'manual',
         signal: AbortSignal.timeout(this.timeoutMs),
       })
+      this.remember(response)
+      text = await response.text()
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error)
+      const reason = reasonOf(error)
       this.log(`${request} failed: ${reason}`)
       return err(0, `LeafWiki did not answer: ${reason}`, reason, { request })
     }
 
-    this.remember(response)
-    const text = await response.text()
     if (response.ok) {
       if (!text) return ok(undefined as T, response.status)
       try {
@@ -190,6 +216,11 @@ export class Session {
       }
     }
     this.log(`${request} -> ${response.status}`)
+    const location = response.headers.get('location')
+    if (response.status >= 300 && response.status < 400 && location) {
+      const to = location.split(/[?#]/)[0]
+      return err(response.status, `LeafWiki redirected to ${to}; burrow does not follow redirects: set LEAFWIKI_URL to the address the wiki answers on`, '', { request })
+    }
     return failureOf(response.status, text, request)
   }
 
@@ -204,8 +235,17 @@ export class Session {
       if (expired) this.cookies.delete(name)
       else this.cookies.set(name, value)
     }
-    this.csrf = response.headers.get('x-csrf-token') ?? this.cookies.get(CSRF_COOKIE) ?? this.csrf
+    this.csrf = response.headers.get('x-csrf-token') ?? this.cookies.get(CSRF_COOKIE) ?? this.cookies.get(`__Host-${CSRF_COOKIE}`) ?? this.csrf
   }
+}
+
+/** undici reports `fetch failed` and keeps the reason (refused, DNS, TLS) in `cause`. */
+function reasonOf(error: unknown): string {
+  if (!(error instanceof Error)) return String(error)
+  const { cause } = error
+  // A refused dual-stack connection is an AggregateError with an empty message and only a `code`.
+  const why = cause instanceof Error ? cause.message || ('code' in cause ? String(cause.code) : '') : ''
+  return why && !error.message.includes(why) ? `${error.message} (${why})` : error.message
 }
 
 /** LeafWiki answers `{"error":"text"}`, `{"error":{"code","message"}}` or plain text. */

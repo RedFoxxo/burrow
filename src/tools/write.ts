@@ -6,14 +6,15 @@ import { failure, invalid, success } from './respond.js'
 import { kind, pageRef, parentId, parentRef, stale, version, withPage } from './shared.js'
 import { defineTool } from './types.js'
 
+// LeafWiki's own rule (internal/core/tree/slug_service.go).
 const slug = z
   .string()
   .trim()
-  .regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes')
+  .regex(/^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/, 'letters and digits, single dashes between them')
   .optional()
   .describe('URL segment; omit to derive it from the title')
-const tags = z.array(z.string().trim().min(1)).describe('The full tag list (replaces the current one)')
-const properties = z.record(z.string(), z.string()).describe('The full property map (replaces the current one)')
+const tags = z.array(z.string().trim().min(1)).describe('Full tag list, replaces the current one')
+const properties = z.record(z.string(), z.string()).describe('Full property map, replaces the current one')
 
 /** Saves `page` with the given changes, keeping everything else as it is. */
 async function save(ctx: ToolContext, page: Page, changes: { title?: string; slug?: string; content?: string; tags?: string[]; properties?: Record<string, string> }) {
@@ -40,8 +41,8 @@ export const writeTools = [
       parent: parentRef,
       title: z.string().trim().min(1),
       slug,
-      kind: kind.optional().describe('page (default) or section'),
-      content: z.string().optional().describe('Markdown; LeafWiki starts a page with "# Title" when omitted'),
+      kind: kind.optional(),
+      content: z.string().optional().describe('Markdown; default "# Title"'),
       tags: tags.optional(),
       properties: properties.optional(),
     },
@@ -67,7 +68,7 @@ export const writeTools = [
   defineTool({
     name: 'write_ensure_path',
     description: 'Make sure a path exists, creating every missing segment; the last one gets the title.',
-    input: { path: z.string().trim().min(1).describe('Path like docs/runbooks/deploy'), title: z.string().trim().min(1), kind: kind.optional().describe('Kind of the last segment: page (default) or section') },
+    input: { path: z.string().trim().min(1), title: z.string().trim().min(1), kind: kind.optional().describe('Of the last segment; section: a folder-like page for children') },
     handler: async ({ path, title, kind }, ctx) => {
       const r = await ctx.wiki.ensure(path, title, kind ?? 'page')
       return r.ok ? success(changedOut(r.data)) : failure(`Could not create the path "${path}"`, r)
@@ -81,8 +82,8 @@ export const writeTools = [
       page: pageRef,
       version,
       title: z.string().trim().min(1).optional(),
-      slug: slug.describe('New URL segment; changes the path and can break links to the page'),
-      content: z.string().optional().describe('The full new Markdown content'),
+      slug: slug.describe('New URL segment; changes the path, which can break links'),
+      content: z.string().optional().describe('Full new Markdown content'),
       tags: tags.optional(),
       properties: properties.optional(),
     },
@@ -102,8 +103,8 @@ export const writeTools = [
     input: {
       page: pageRef,
       version,
-      find: z.string().min(1).describe('Exact text to replace, long enough to occur only once'),
-      replace: z.string().describe('The new text (empty removes the passage)'),
+      find: z.string().min(1).describe('Exact text, occurring once in the page'),
+      replace: z.string().describe('New text; empty removes the passage'),
     },
     handler: async ({ page, version, find, replace }, ctx) =>
       withPage(ctx, page, async (p) => {
@@ -148,7 +149,7 @@ export const writeTools = [
     input: { page: pageRef, set: z.record(z.string(), z.string()).optional(), remove: z.array(z.string()).optional() },
     handler: async ({ page, set, remove }, ctx) =>
       withPage(ctx, page, async (p) => {
-        if (!set && !remove?.length) return invalid('give properties to set or remove')
+        if (!Object.keys(set ?? {}).length && !remove?.length) return invalid('give properties to set or remove')
         const next = Object.fromEntries(Object.entries({ ...(p.properties ?? {}), ...(set ?? {}) }).filter(([k]) => !remove?.includes(k)))
         const r = await save(ctx, p, { properties: next })
         return r.ok ? success({ ...changedOut(r.data), properties: r.data.properties }) : failure(`Could not change the properties of "${p.path}"`, r)
@@ -158,7 +159,7 @@ export const writeTools = [
   defineTool({
     name: 'write_move',
     description: 'Move a page (with its children) under another parent; links to it are not rewritten (see write_refactor).',
-    input: { page: pageRef, parent: z.string().trim().min(1).describe('New parent id or path; "/" for the top level'), position: z.number().int().min(0).optional().describe('Place among the new siblings, 0 first; default last') },
+    input: { page: pageRef, parent: z.string().trim().min(1).describe('New parent id or path; "/" for the top level'), position: z.number().int().min(0).optional().describe('Index among the new siblings; default last') },
     handler: async ({ page, parent, position }, ctx) =>
       withPage(ctx, page, async (p) => {
         const target = await parentId(ctx, parent)
@@ -172,8 +173,8 @@ export const writeTools = [
 
   defineTool({
     name: 'write_sort',
-    description: 'Set the order of the children of a page; list every child.',
-    input: { parent: z.string().trim().min(1).describe('Parent id or path; "/" for the top level'), order: z.array(z.string().trim().min(1)).min(1).describe('Child ids or paths in the new order') },
+    description: 'Set the order of the children of a page.',
+    input: { parent: z.string().trim().min(1).describe('Parent id or path; "/" for the top level'), order: z.array(z.string().trim().min(1)).min(1).describe('Every child id or path, in the new order') },
     handler: async ({ parent, order }, ctx) => {
       const target = await parentId(ctx, parent)
       if (target.error) return target.error
@@ -249,7 +250,7 @@ export const writeTools = [
     input: {
       page: pageRef,
       version,
-      title: z.string().trim().optional().describe('New title (rename)'),
+      title: z.string().trim().min(1).optional().describe('New title (rename)'),
       slug: slug.describe('New slug (rename)'),
       parent: parentRef.describe('New parent id or path (move); "/" for the top level'),
       position: z.number().int().min(0).optional(),
@@ -293,12 +294,14 @@ export const writeTools = [
     input: {
       page: pageRef,
       filename: z.string().trim().min(1).regex(/^[^/\\]+$/, 'a file name, not a path'),
-      base64: z.string().min(1).describe('The file content, base64-encoded; burrow never reads local files'),
+      base64: z.string().min(1).describe('File content as base64; local paths are not read'),
     },
     handler: async ({ page, filename, base64 }, ctx) =>
       withPage(ctx, page, async (p) => {
-        const bytes = Buffer.from(base64, 'base64')
-        if (!bytes.length) return invalid('the base64 data is empty or not base64')
+        // Node decodes whatever it can of a malformed string; check first so a wrong file is never stored.
+        const data = base64.replace(/^data:[^,]*;base64,/, '').replace(/\s+/g, '')
+        if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(data)) return invalid('base64 is not base64 data: send only the encoded bytes')
+        const bytes = Buffer.from(data, 'base64')
         const r = await ctx.wiki.upload(p.id, filename, bytes)
         if (!r.ok) return failure(`Could not attach "${filename}" to "${p.path}"`, r)
         const embed = /\.(png|jpe?g|gif|webp|svg)$/i.test(filename) ? `![${filename}](${r.data.file})` : `[${filename}](${r.data.file})`

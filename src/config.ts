@@ -19,6 +19,13 @@ const FALSE = ['0', 'false', 'no', 'off', '']
 /** Reads and validates the environment. Throws `ConfigError` listing every problem at once. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const problems: string[] = []
+  // A client that cannot find a variable may pass its reference on as text (Claude Code does).
+  for (const name of ['LEAFWIKI_USERNAME', 'LEAFWIKI_PASSWORD']) {
+    const value = env[name]?.trim() ?? ''
+    if (/^(\$\{[^}]*\}|\{env:[^}]*\})$/.test(value)) {
+      problems.push(`${name} is the unexpanded "${value}": set that variable where the MCP client starts, then restart the client`)
+    }
+  }
 
   const rawUrl = env.LEAFWIKI_URL?.trim()
   let baseUrl = ''
@@ -27,7 +34,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   } else {
     try {
       const url = new URL(rawUrl)
-      if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL.includes(url.hostname))) {
+      if (url.username || url.password) {
+        // Not echoed: it holds a password.
+        problems.push('LEAFWIKI_URL must not contain a user name or password; use LEAFWIKI_USERNAME and LEAFWIKI_PASSWORD')
+      } else if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL.includes(url.hostname))) {
         problems.push(`LEAFWIKI_URL must be an https URL (the sign-in cookies travel with every request), got "${rawUrl}"`)
       } else if (/\/api(\/|$)/i.test(url.pathname)) {
         problems.push(`LEAFWIKI_URL must be the wiki root without /api, got "${rawUrl}"`)

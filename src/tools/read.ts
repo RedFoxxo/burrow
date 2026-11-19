@@ -4,7 +4,7 @@ import { failure, success } from './respond.js'
 import { pageRef, parentId, parentRef, withPage } from './shared.js'
 import { defineTool } from './types.js'
 
-const limit = (max: number, dflt: number) => z.number().int().min(1).max(max).optional().describe(`Default ${dflt}, at most ${max}`)
+const limit = (max: number, dflt: number) => z.number().int().min(1).max(max).optional().describe(`Default ${dflt}`)
 
 export const readTools = [
   defineTool({
@@ -15,18 +15,19 @@ export const readTools = [
       const [config, me] = await Promise.all([ctx.wiki.config(), ctx.wiki.me()])
       if (!config.ok) return failure('Could not read the wiki settings', config)
       const c = config.data
-      return success(
-        compact({
+      // Features stay in the answer when off: a missing key would read as "unknown".
+      return success({
+        ...compact({
           url: ctx.wiki.session.baseUrl,
           user: me.ok && me.data ? me.data.username : c.authDisabled ? '(no sign-in on this wiki)' : undefined,
           role: me.ok && me.data ? me.data.role : undefined,
-          revisions: Boolean(c.enableRevision),
-          linkRefactor: Boolean(c.enableLinkRefactor),
-          publicAccess: c.publicAccess,
           maxUploadMB: c.maxAssetUploadSizeBytes ? Math.round(c.maxAssetUploadSizeBytes / 1048576) : undefined,
-          readOnly: ctx.config.readOnly,
         }),
-      )
+        revisions: Boolean(c.enableRevision),
+        linkRefactor: Boolean(c.enableLinkRefactor),
+        publicAccess: Boolean(c.publicAccess),
+        readOnly: ctx.config.readOnly,
+      })
     },
   }),
 
@@ -35,7 +36,7 @@ export const readTools = [
     description: 'Page hierarchy as indented lines with path and id, for the whole wiki or below one page.',
     input: {
       under: parentRef.describe('Page id or path to list below; omit for the whole wiki'),
-      depth: z.number().int().min(1).max(20).optional().describe('Levels to show (default 3); deeper ones are counted, not listed'),
+      depth: z.number().int().min(1).max(20).optional().describe('Levels shown, default 3; deeper ones are counted'),
     },
     handler: async ({ under, depth }, ctx) => {
       const tree = await ctx.wiki.tree()
@@ -44,9 +45,11 @@ export const readTools = [
       if (under) {
         const parent = await parentId(ctx, under)
         if (parent.error) return parent.error
-        const hit = parent.id ? findNode(tree.data, parent.id) : undefined
-        if (!hit) return failure(`"${under}" is not in the tree`)
-        node = hit
+        if (parent.id) {
+          const hit = findNode(tree.data, parent.id)
+          if (!hit) return failure(`"${under}" is not in the tree`)
+          node = hit
+        }
       }
       return success(treeLines(node, depth ?? 3))
     },
@@ -57,7 +60,7 @@ export const readTools = [
     description: 'One page: Markdown content, tags, properties, authors and the version needed to change it.',
     input: {
       page: pageRef,
-      content: z.boolean().optional().describe('false leaves out the content (default true)'),
+      content: z.boolean().optional().describe('false omits the content'),
     },
     handler: async ({ page, content }, ctx) => withPage(ctx, page, async (p) => success(pageOut(p, content !== false))),
   }),
@@ -65,7 +68,7 @@ export const readTools = [
   defineTool({
     name: 'read_lookup_path',
     description: 'Whether a path exists, segment by segment, and whether it can be created.',
-    input: { path: z.string().trim().min(1).describe('Path like docs/runbooks/deploy') },
+    input: { path: z.string().trim().min(1) },
     handler: async ({ path }, ctx) => {
       const r = await ctx.wiki.lookup(path)
       return r.ok ? success(r.data) : failure(`Could not look up "${path}"`, r)
@@ -97,9 +100,9 @@ export const readTools = [
       return success(
         compact({
           total: d.count,
-          offset: d.offset,
+          offset: d.offset || undefined,
           more: d.offset + (d.items?.length ?? 0) < d.count ? true : undefined,
-          pages: (d.items ?? []).map((i) => compact({ id: i.page_id, path: i.path, title: plain(i.title), kind: i.kind, tags: i.tags, excerpt: plain(i.excerpt) })),
+          pages: (d.items ?? []).map((i) => compact({ id: i.page_id, path: i.path, title: plain(i.title), kind: i.kind === 'section' ? i.kind : undefined, tags: i.tags, excerpt: plain(i.excerpt) })),
           tags: d.tag_facets,
         }),
       )
@@ -275,7 +278,7 @@ export const readTools = [
       withPage(ctx, page, async (p) => {
         const r = await ctx.wiki.assets(p.id)
         if (!r.ok) return failure(`Could not list the files of "${p.path}"`, r)
-        return success((r.data.files ?? []).map((f) => ({ name: f.split('/').pop(), markdown: f, url: ctx.wiki.session.absolute(f) })))
+        return success((r.data.files ?? []).map((f) => ({ name: f.split('/').pop(), file: f, url: ctx.wiki.session.absolute(f) })))
       }),
   }),
 
@@ -296,8 +299,8 @@ export const readTools = [
     description: 'Which pages link to a page and would be rewritten if it were renamed or moved (needs link refactoring on); changes nothing.',
     input: {
       page: pageRef,
-      title: z.string().trim().optional().describe('New title (rename)'),
-      slug: z.string().trim().optional().describe('New slug (rename)'),
+      title: z.string().trim().min(1).optional().describe('New title (rename)'),
+      slug: z.string().trim().min(1).optional().describe('New slug (rename)'),
       parent: parentRef.describe('New parent id or path (move); "/" for the top level'),
     },
     handler: async ({ page, title, slug, parent }, ctx) =>
