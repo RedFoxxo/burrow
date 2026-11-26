@@ -10,7 +10,8 @@ license = "MIT"
 repository = "https://github.com/RedFoxxo/burrow"
 homepage = "https://github.com/RedFoxxo/burrow"
 readme = "README.md"
-keywords = ["mcp", "leafwiki", "wiki", "ai", "model-context-protocol"]
+# crates.io: at most 5 keywords, each under 20 characters.
+keywords = ["mcp", "mcp-server", "leafwiki", "wiki", "ai"]
 categories = ["command-line-utilities", "web-programming::http-client"]
 # What `cargo install burrow-mcp` builds from; the golden tool lists keep `cargo test` working there.
 include = ["/src/**", "/tests/golden/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/CHANGELOG.md", "/LICENSE"]
