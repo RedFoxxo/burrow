@@ -1,0 +1,1105 @@
+{
+  "tools": [
+    {
+      "name": "read_wiki",
+      "description": "Who is signed in (username, role) and which wiki features are on (revisions, link refactoring, upload size).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_tree",
+      "description": "Page hierarchy as indented lines with path and id, for the whole wiki or below one page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "under": {
+            "description": "Page id or path to list below; omit for the whole wiki",
+            "type": "string"
+          },
+          "depth": {
+            "description": "Levels shown, default 3; deeper ones are counted",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_page",
+      "description": "One page: Markdown content, tags, properties, authors and the version needed to change it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "content": {
+            "description": "false omits the content",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_lookup_path",
+      "description": "Whether a path exists, segment by segment, and whether it can be created.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_find_title",
+      "description": "Pages whose title matches exactly (case-insensitive), with path and id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_search",
+      "description": "Full-text search over page titles, content and tags, best match first, with excerpts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "description": "Default 20",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_search_status",
+      "description": "Whether the search index is still building, and how many pages it holds.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_tags",
+      "description": "Tags in use with how many pages carry each.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Only tags containing this text",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Default 50",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_pages_by_tags",
+      "description": "Pages carrying all of the given tags.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "tags"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_properties",
+      "description": "Property keys in use (structured page metadata) with how many pages set each.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Only keys containing this text",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Default 50",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_pages_by_property",
+      "description": "Pages that set a property, optionally to one value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_links",
+      "description": "A page's links: pages linking to it, pages it links to, and broken links both ways.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_broken_links",
+      "description": "Every broken link in the wiki (admins only).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_revisions",
+      "description": "A page's revision history, newest first (needs revisions on).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "limit": {
+            "description": "Default 20",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "cursor": {
+            "description": "next from the previous answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_revision",
+      "description": "One past revision of a page with its full content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Revision id from read_revisions"
+          }
+        },
+        "required": [
+          "page",
+          "revision"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_compare_revisions",
+      "description": "Line diff between two revisions of a page, or between one revision and the latest.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "base": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Older revision id"
+          },
+          "target": {
+            "description": "Newer revision id; omit for the latest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page",
+          "base"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_favorites",
+      "description": "The signed-in user's favorite pages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_assets",
+      "description": "Files attached to a page, with the URL to embed or link them.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_slug",
+      "description": "The slug LeafWiki would give a title, unique under its parent (editors only).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "description": "Parent id or path; omit for the top level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_refactor_preview",
+      "description": "Which pages link to a page and would be rewritten if it were renamed or moved (needs link refactoring on); changes nothing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "title": {
+            "description": "New title (rename)",
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "New slug (rename)",
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "description": "New parent id or path (move); \"/\" for the top level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_create_page",
+      "description": "Create a page (or section) under a parent, optionally with content, tags and properties.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "parent": {
+            "description": "Parent id or path; omit for the top level",
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "URL segment; omit to derive it from the title",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "page",
+              "section"
+            ],
+            "description": "section: a folder-like page for children"
+          },
+          "content": {
+            "description": "Markdown; default \"# Title\"",
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Full tag list, replaces the current one"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Full property map, replaces the current one"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_ensure_path",
+      "description": "Make sure a path exists, creating every missing segment; the last one gets the title.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "description": "Of the last segment; section: a folder-like page for children",
+            "type": "string",
+            "enum": [
+              "page",
+              "section"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "title"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_update_page",
+      "description": "Change a page's title, slug, content, tags or properties; fields you leave out stay as they are.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "version from your last read of the page"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "New URL segment; changes the path, which can break links",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$"
+          },
+          "content": {
+            "description": "Full new Markdown content",
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Full tag list, replaces the current one"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Full property map, replaces the current one"
+          }
+        },
+        "required": [
+          "page",
+          "version"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_edit_text",
+      "description": "Replace one exact passage of a page's content, without sending the whole page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "version from your last read of the page"
+          },
+          "find": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Exact text, occurring once in the page"
+          },
+          "replace": {
+            "type": "string",
+            "description": "New text; empty removes the passage"
+          }
+        },
+        "required": [
+          "page",
+          "version",
+          "find",
+          "replace"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_append",
+      "description": "Add Markdown at the end of a page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "page",
+          "text"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_tags",
+      "description": "Add or remove tags on a page, keeping the others.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_properties",
+      "description": "Set or remove properties (structured metadata) on a page, keeping the others.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "set": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_move",
+      "description": "Move a page (with its children) under another parent; links to it are not rewritten (see write_refactor).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "parent": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New parent id or path; \"/\" for the top level"
+          },
+          "position": {
+            "description": "Index among the new siblings; default last",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "page",
+          "parent"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_sort",
+      "description": "Set the order of the children of a page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "parent": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Parent id or path; \"/\" for the top level"
+          },
+          "order": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Every child id or path, in the new order"
+          }
+        },
+        "required": [
+          "parent",
+          "order"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_pin",
+      "description": "Pin a page to the top of its siblings, or unpin it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "pinned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "pinned"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_favorite",
+      "description": "Add a page to the signed-in user's favorites, or remove it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "favorite": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "favorite"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_convert",
+      "description": "Turn a page into a section or a section into a page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "page",
+              "section"
+            ],
+            "description": "section: a folder-like page for children"
+          }
+        },
+        "required": [
+          "page",
+          "kind"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_copy",
+      "description": "Copy a page (content, tags, properties, files) under a parent with a new title.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "parent": {
+            "description": "Parent id or path; omit for the top level",
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "URL segment; omit to derive it from the title",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$"
+          }
+        },
+        "required": [
+          "page",
+          "title"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_refactor",
+      "description": "Rename or move a page and rewrite the links that point to it (needs link refactoring on; preview with read_refactor_preview).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "version from your last read of the page"
+          },
+          "title": {
+            "description": "New title (rename)",
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "New slug (rename)",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$"
+          },
+          "parent": {
+            "description": "New parent id or path (move); \"/\" for the top level",
+            "type": "string"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rewriteLinks": {
+            "description": "Default true",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "version"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_restore_revision",
+      "description": "Bring a page back to a past revision (the current state stays in the history).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Revision id from read_revisions"
+          }
+        },
+        "required": [
+          "page",
+          "revision"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_upload_asset",
+      "description": "Attach a file to a page from base64 data; answers with the Markdown link to embed it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^/\\\\]+$"
+          },
+          "base64": {
+            "type": "string",
+            "minLength": 1,
+            "description": "File content as base64; local paths are not read"
+          }
+        },
+        "required": [
+          "page",
+          "filename",
+          "base64"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "write_rename_asset",
+      "description": "Rename a file attached to a page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^/\\\\]+$"
+          }
+        },
+        "required": [
+          "page",
+          "from",
+          "to"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "delete_page",
+      "description": "Delete a page; a page with children is refused unless recursive is true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "version from your last read of the page"
+          },
+          "recursive": {
+            "description": "Also delete every page below it; only when the user asked for that",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "version"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "delete_asset",
+      "description": "Delete a file attached to a page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "page",
+          "filename"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

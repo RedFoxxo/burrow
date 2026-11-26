@@ -20,5 +20,5 @@
     "verbatimModuleSyntax": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts", "vitest.wiki.config.ts"]
+  "include": ["tests/**/*.ts", "vitest.wiki.config.ts"]
 }

@@ -1,4 +1,4 @@
-# burrow
+# burrow 🦊
 
 An MCP server for [LeafWiki](https://github.com/perber/leafwiki): AI assistants
 read, search, write and organize wiki pages. It signs in with your own LeafWiki
@@ -8,16 +8,64 @@ change someone else made since your last read.
 Tested against LeafWiki **v0.14.2**. Releases are listed in
 [CHANGELOG.md](CHANGELOG.md).
 
+burrow is one small executable: no Node.js or other runtime, about 8 MB of
+memory while it runs.
+
 ## Requirements
 
-- Node.js 22.12 or newer (`npx` comes with it)
+- Linux (x64 or arm64), macOS (Apple silicon or Intel) or Windows (x64)
 - A LeafWiki account that signs in with a username and password alone (no
   two-factor codes). A viewer account can only use the `read_` tools; changing
   pages needs an editor or admin.
 
-Nothing to download or build: your MCP client starts burrow with `npx`, which
-fetches [`@redfoxxo/burrow`](https://www.npmjs.com/package/@redfoxxo/burrow)
-from npm on first use. `@1` keeps you on 1.x releases.
+## Install
+
+Download the file for your system from the
+[latest release](https://github.com/RedFoxxo/burrow/releases/latest) into a
+folder on your `PATH`. Each release also has `SHA256SUMS` to check the file
+against.
+
+| System | File |
+|---|---|
+| Linux x64 | `burrow-linux-x64` |
+| Linux arm64 | `burrow-linux-arm64` |
+| macOS, Apple silicon | `burrow-macos-arm64` |
+| macOS, Intel | `burrow-macos-x64` |
+| Windows x64 | `burrow-windows-x64.exe` |
+
+Linux and macOS (pick your file in the URL):
+
+```sh
+mkdir -p ~/.local/bin
+curl -fsSL -o ~/.local/bin/burrow https://github.com/RedFoxxo/burrow/releases/latest/download/burrow-linux-x64
+chmod +x ~/.local/bin/burrow
+burrow --version
+```
+
+`~/.local/bin` must be on your `PATH`. On macOS, a file downloaded with a
+browser instead of `curl` needs `xattr -d com.apple.quarantine burrow` once
+before it starts.
+
+Windows, in PowerShell:
+
+```powershell
+$dir = "$env:LOCALAPPDATA\Programs\burrow"
+New-Item -ItemType Directory -Force $dir | Out-Null
+Invoke-WebRequest https://github.com/RedFoxxo/burrow/releases/latest/download/burrow-windows-x64.exe -OutFile "$dir\burrow.exe"
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+[Environment]::SetEnvironmentVariable('Path', "$userPath;$dir", 'User')
+```
+
+Open a new terminal, then check with `burrow --version`.
+
+To update, download the newer file over the old one. To build from source
+instead (needs Rust):
+`cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.0 --locked`.
+
+**Coming from 1.x?** burrow 1.x ran through `npx` from the npm package
+`@redfoxxo/burrow`, which gets no new versions. Install burrow as above, then
+change your client's `"command": "npx", "args": ["-y", "@redfoxxo/burrow@1"]`
+to `"command": "burrow"`. Tools, settings and permission rules stay the same.
 
 ## Setup
 
@@ -50,8 +98,7 @@ so the password is not stored in the config:
 ```sh
 claude mcp add-json burrow --scope user '{
   "type": "stdio",
-  "command": "npx",
-  "args": ["-y", "@redfoxxo/burrow@1"],
+  "command": "burrow",
   "env": {
     "LEAFWIKI_URL": "https://wiki.example.com",
     "LEAFWIKI_USERNAME": "${LEAFWIKI_USERNAME}",
@@ -87,7 +134,7 @@ Add the server and the permission rules to `opencode.json` (global:
     "servers": {
       "burrow": {
         "type": "local",
-        "command": ["npx", "-y", "@redfoxxo/burrow@1"],
+        "command": ["burrow"],
         "environment": {
           "LEAFWIKI_URL": "https://wiki.example.com",
           "LEAFWIKI_USERNAME": "{env:LEAFWIKI_USERNAME}",
@@ -117,8 +164,7 @@ Any client that starts local (stdio) servers works. Most accept an
 {
   "mcpServers": {
     "burrow": {
-      "command": "npx",
-      "args": ["-y", "@redfoxxo/burrow@1"],
+      "command": "burrow",
       "env": {
         "LEAFWIKI_URL": "https://wiki.example.com",
         "LEAFWIKI_USERNAME": "your-username",
@@ -129,6 +175,9 @@ Any client that starts local (stdio) servers works. Most accept an
 }
 ```
 
+If the client can't find `burrow` (some desktop apps don't see your shell's
+`PATH`), give the full path to the file instead, e.g.
+`"C:\\Users\\you\\AppData\\Local\\Programs\\burrow\\burrow.exe"` on Windows.
 Then map the three tool-name prefixes below to the client's permission system.
 
 ## Tools

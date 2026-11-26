@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { toolsFor } from '../../src/tools/index.js'
 import { connect, type TestClient } from './client.js'
 import { EDITOR, VIEWER } from './leafwiki.js'
 
@@ -207,8 +206,8 @@ describe('accounts and modes', () => {
     const ro = await connect(EDITOR, { env: { BURROW_READ_ONLY: 'true' } })
     try {
       const names = (await ro.client.listTools()).tools.map((t) => t.name)
-      expect(names.length).toBe(toolsFor(true).length)
-      expect(names.every((n) => n.startsWith('read_'))).toBe(true)
+      const all = (await ed.client.listTools()).tools.map((t) => t.name)
+      expect(names).toEqual(all.filter((n) => n.startsWith('read_')))
     } finally {
       await ro.close()
     }
@@ -229,10 +228,8 @@ describe('accounts and modes', () => {
     }
   })
 
-  test('every tool was exercised against the real wiki', () => {
-    const missing = toolsFor(false)
-      .map((t) => t.name)
-      .filter((n) => !touched.has(n))
+  test('every tool was exercised against the real wiki', async () => {
+    const missing = (await ed.client.listTools()).tools.map((t) => t.name).filter((n) => !touched.has(n))
     expect(missing).toEqual([])
   })
 })

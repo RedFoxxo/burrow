@@ -5,6 +5,8 @@ on:
     branches: [main, stable]
   pull_request:
   workflow_dispatch:
+  # The release workflow runs these checks on the tagged commit before it builds anything.
+  workflow_call:
 
 permissions:
   contents: read
@@ -14,13 +16,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
-      # Every tool against the pinned LeafWiki release (tests/wiki/leafwiki.ts).
+      # Builds the release binary, then every tool against the pinned LeafWiki release (tests/wiki/leafwiki.ts).
       - run: npm run test:wiki
-      - run: npm run build
+
+  # The unit tests on the other systems the release ships for.
+  other-systems:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: cargo test --locked

@@ -1,0 +1,100 @@
+name: release
+
+# Pushing a tag vX.Y.Z publishes burrow X.Y.Z: the checks run on the tagged
+# commit, each binary is built on its own system, and a GitHub Release gets the
+# binaries, SHA256SUMS and the version's changelog section. Asset names are a
+# contract with installers (the Mamami plugin downloads them): never rename them.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in Cargo.toml"
+            exit 1
+          fi
+          if ! grep -q "^## $version — " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## $version — <date>' section"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  checks:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    # `needs` lists every job whose outputs a step reads: only direct dependencies are visible.
+    needs: [version, checks]
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Static musl builds: they run on any Linux, whatever its C library.
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, asset: burrow-linux-x64 }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, asset: burrow-linux-arm64 }
+          - { target: x86_64-apple-darwin, os: macos-latest, asset: burrow-macos-x64 }
+          - { target: aarch64-apple-darwin, os: macos-latest, asset: burrow-macos-arm64 }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, asset: burrow-windows-x64.exe }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
+      - if: contains(matrix.target, 'musl')
+        run: command -v clang || (sudo apt-get update && sudo apt-get install -y clang)
+      # ring's C code for musl: the runner's clang, with rustc's own musl to link against.
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+        env:
+          CC_x86_64_unknown_linux_musl: clang
+          CC_aarch64_unknown_linux_musl: clang
+      - name: Name the binary and check that it runs
+        run: |
+          bin=target/${{ matrix.target }}/release/burrow
+          [ -f "$bin.exe" ] && bin="$bin.exe"
+          mkdir dist && cp "$bin" "dist/${{ matrix.asset }}"
+          # x64 macOS builds on an arm64 runner; Rosetta runs it.
+          "dist/${{ matrix.asset }}" --version | tee version.txt
+          grep -qx "burrow ${{ needs.version.outputs.version }}" version.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          cd dist
+          sha256sum burrow-* > SHA256SUMS
+          cat SHA256SUMS
+          # The changelog section of this version, without its heading.
+          awk -v v="$VERSION" '$0 ~ "^## " v " " {on=1; next} /^## / {on=0} on' ../CHANGELOG.md > notes.md
+          gh release create "v$VERSION" --title "burrow $VERSION" --notes-file notes.md burrow-* SHA256SUMS

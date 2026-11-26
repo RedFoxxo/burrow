@@ -1,0 +1,29 @@
+[package]
+name = "burrow"
+# The one place the version lives: `burrow --version` and `serverInfo.version` read it.
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.85"
+description = "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes"
+license = "MIT"
+repository = "https://github.com/RedFoxxo/burrow"
+publish = false
+
+[dependencies]
+base64 = "0.23"
+percent-encoding = "2.3"
+regex = "1.13"
+# ring instead of reqwest's default aws-lc-rs: it builds for every release target with
+# nothing but a C compiler (no cmake or NASM), including static musl Linux builds.
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "multipart", "system-proxy"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+# preserve_order: answers keep LeafWiki's and burrow's key order, as JSON.stringify does.
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["rt", "macros", "io-std", "io-util", "sync", "time"] }
+url = "2.5"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

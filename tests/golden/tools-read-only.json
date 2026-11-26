@@ -1,0 +1,453 @@
+{
+  "tools": [
+    {
+      "name": "read_wiki",
+      "description": "Who is signed in (username, role) and which wiki features are on (revisions, link refactoring, upload size).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_tree",
+      "description": "Page hierarchy as indented lines with path and id, for the whole wiki or below one page.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "under": {
+            "description": "Page id or path to list below; omit for the whole wiki",
+            "type": "string"
+          },
+          "depth": {
+            "description": "Levels shown, default 3; deeper ones are counted",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_page",
+      "description": "One page: Markdown content, tags, properties, authors and the version needed to change it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "content": {
+            "description": "false omits the content",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_lookup_path",
+      "description": "Whether a path exists, segment by segment, and whether it can be created.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_find_title",
+      "description": "Pages whose title matches exactly (case-insensitive), with path and id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_search",
+      "description": "Full-text search over page titles, content and tags, best match first, with excerpts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "description": "Default 20",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_search_status",
+      "description": "Whether the search index is still building, and how many pages it holds.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_tags",
+      "description": "Tags in use with how many pages carry each.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Only tags containing this text",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Default 50",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_pages_by_tags",
+      "description": "Pages carrying all of the given tags.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "tags"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_properties",
+      "description": "Property keys in use (structured page metadata) with how many pages set each.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Only keys containing this text",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Default 50",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_pages_by_property",
+      "description": "Pages that set a property, optionally to one value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_links",
+      "description": "A page's links: pages linking to it, pages it links to, and broken links both ways.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_broken_links",
+      "description": "Every broken link in the wiki (admins only).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_revisions",
+      "description": "A page's revision history, newest first (needs revisions on).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "limit": {
+            "description": "Default 20",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "cursor": {
+            "description": "next from the previous answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_revision",
+      "description": "One past revision of a page with its full content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Revision id from read_revisions"
+          }
+        },
+        "required": [
+          "page",
+          "revision"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_compare_revisions",
+      "description": "Line diff between two revisions of a page, or between one revision and the latest.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "base": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Older revision id"
+          },
+          "target": {
+            "description": "Newer revision id; omit for the latest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page",
+          "base"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_favorites",
+      "description": "The signed-in user's favorite pages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_assets",
+      "description": "Files attached to a page, with the URL to embed or link them.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_slug",
+      "description": "The slug LeafWiki would give a title, unique under its parent (editors only).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "description": "Parent id or path; omit for the top level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "read_refactor_preview",
+      "description": "Which pages link to a page and would be rewritten if it were renamed or moved (needs link refactoring on); changes nothing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Page id or path"
+          },
+          "title": {
+            "description": "New title (rename)",
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "description": "New slug (rename)",
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "description": "New parent id or path (move); \"/\" for the top level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

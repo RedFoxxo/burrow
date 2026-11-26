@@ -1,7 +1,24 @@
 # Changelog
 
 Versions follow [Semantic Versioning](https://semver.org/). The version lives in
-`package.json` and `src/version.ts` (a test keeps them equal).
+`Cargo.toml`.
+
+## 2.0.0 — 2026-11-26
+
+The same server, rewritten in Rust: one executable without Node.js, about 8 MB
+of memory instead of about 76 MB plus `npx`'s own process.
+
+- **Breaking: installed as a file, not through npm.** Each release on GitHub has
+  binaries for Linux (x64, arm64; static, any distribution), macOS (Apple
+  silicon, Intel) and Windows (x64), with `SHA256SUMS`. Clients start
+  `burrow` instead of `npx -y @redfoxxo/burrow@1`; the npm package stays at
+  1.1.0. See "Install" in the README.
+- Tools, parameters, descriptions, answers, environment variables and sign-in
+  behaviour are unchanged: `tools/list` is the 1.1.0 list, key order included,
+  and the same real-wiki tests pass.
+- `burrow --version` and `burrow --help`.
+- Starts in milliseconds and needs no network until the first tool call (`npx`
+  checked the registry on every start).
 
 ## 1.1.0 — 2026-11-19
 

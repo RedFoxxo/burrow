@@ -7,28 +7,34 @@ purpose.
 
 ## Architecture
 
-- `src/http/session.ts`: the only code that talks to LeafWiki. Cookie session,
-  CSRF, refresh, one repeat after a 401 (none when a sign-in finished meanwhile).
+- `src/http.rs`: the only code that talks to LeafWiki. Cookie session, CSRF,
+  refresh, one repeat after a 401 (none when a sign-in finished meanwhile).
   Never follows redirects; a rejected password or TOTP account is remembered and
-  not retried. Every outcome is a `Result`; never throw for HTTP failures.
-- `src/wiki/client.ts`: one method per route. `resolve(ref)` takes an id or a path.
-- `src/wiki/types.ts`: response shapes as observed, only the fields read.
-- `src/tools/{read,write,delete}.ts`: tools, grouped by tier. The name prefix is
-  the approval contract (`read_` / `write_` / `delete_`); `server.ts` refuses a
+  not retried. Every outcome is a `Result`; never panic for HTTP failures. The
+  `Transport` trait is the seam the tests replace.
+- `src/wiki.rs`: one method per route. `resolve(ref)` takes an id or a path.
+  Pages and tree nodes are typed (only the fields read); other answers stay JSON
+  and keep LeafWiki's key order.
+- `src/tools/{read,write,delete}.rs`: tools, grouped by tier. The name prefix is
+  the approval contract (`read_` / `write_` / `delete_`); `tools_for` refuses a
   tool without one. Tool names, parameter names and env vars are a contract
-  with the Mamami plugin (approval rules, skills): never rename them in 1.x.
-- `src/server.ts`: registers the tools with the SDK (argument validation, calls)
-  but answers `tools/list` itself, from zod's JSON schema without `$schema`,
-  `execution`, default-valued hints and other noise: every byte there is model
-  tokens on every request.
-- `src/format.ts`: answers stay short: compact JSON without empty fields, the
+  with the Mamami plugin (approval rules, skills): never rename them in 2.x.
+- `src/schema.rs`: one parameter definition gives the JSON schema the model
+  reads and the argument validation. The schema has no `$schema`, `execution`,
+  default-valued hints or other noise: every byte there is model tokens on
+  every request. `tests/golden/` pins the whole `tools/list`.
+- `src/mcp.rs`: MCP over stdio, by hand: `initialize`, `ping`, `tools/list`,
+  `tools/call` (concurrent). Nothing else is needed for a tools-only server.
+- `src/format.rs`: answers stay short: compact JSON without empty fields, the
   tree as indented lines, search excerpts without `<b>`, revision diffs as
   unified lines.
 
 ## Stack
 
-TypeScript (strict, ESM), Node `>=22.12`, `@modelcontextprotocol/sdk`, `zod`,
-`vitest`. Versions pinned exactly. No other runtime dependency.
+Rust (edition 2024, stable): `tokio` (one thread), `reqwest` with rustls and
+ring, `serde_json`, `regex`. No other runtime dependency. `tests/wiki/` is a
+TypeScript harness (`@modelcontextprotocol/sdk`, `vitest`) that drives the built
+executable against a real LeafWiki.
 
 ## LeafWiki API facts (v0.14.2)
 
