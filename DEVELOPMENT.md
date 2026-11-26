@@ -82,13 +82,54 @@ The asset names (`burrow-linux-x64`, `burrow-linux-arm64`, `burrow-macos-x64`,
 ## Directories (Glama)
 
 Glama lists burrow from the default branch, `stable`, which the release
-moves forward. It builds the `Dockerfile`, starts the image and scores the
-tool descriptions from `tools/list`; the image starts with a placeholder
-`LEAFWIKI_URL` and no account, since burrow signs in only on the first call.
-`glama.json` names the maintainers who can claim the listing. Descriptions are
-graded per tool and the weakest weighs most: each says what the tool answers,
-when to use it and which neighbouring tool instead, and every parameter has a
-description.
+moves forward, and scores the tool descriptions from `tools/list`. Descriptions
+are graded per tool and the weakest weighs most: each says what the tool
+answers, when to use it and which neighbouring tool instead, and every
+parameter has a description. `glama.json` names the maintainers who can claim
+the listing.
+
+Glama does **not** build the repository's `Dockerfile` (that one is for
+`docker build` users). It generates its own image from the form at
+<https://glama.ai/mcp/servers/RedFoxxo/burrow/admin/dockerfile>, runs burrow
+under `mcp-proxy` and lists its tools. The form's values live only on Glama;
+this is their record, to paste back if the form is ever reset:
+
+| Field | Value |
+|---|---|
+| Pinned commit SHA | the release's commit: `git rev-parse 'vX.Y.Z^{commit}'` |
+| Placeholder parameters | `{"LEAFWIKI_URL": "https://wiki.example.com"}` |
+
+Build steps:
+
+```json
+[
+  "apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates curl && rm -rf /var/lib/apt/lists/*",
+  "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal",
+  ". \"$HOME/.cargo/env\" && cargo build --release --locked",
+  "install -m 0755 target/release/burrow /usr/local/bin/burrow"
+]
+```
+
+CMD arguments: `["mcp-proxy", "--", "burrow"]`
+
+Environment variables JSON schema (burrow answers `tools/list` with only the
+placeholder URL; it signs in on the first tool call):
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "LEAFWIKI_URL": { "type": "string", "description": "Wiki root, e.g. https://wiki.example.com" },
+    "LEAFWIKI_USERNAME": { "type": "string", "description": "LeafWiki username or email" },
+    "LEAFWIKI_PASSWORD": { "type": "string", "description": "Its password" },
+    "BURROW_READ_ONLY": { "type": "string", "description": "true offers only the read_ tools" }
+  },
+  "required": ["LEAFWIKI_URL"]
+}
+```
+
+After each release: put the new commit in **Pinned commit SHA**, save, start a
+build, and once it passes, make a release from the same page.
 
 ## Install scripts
 

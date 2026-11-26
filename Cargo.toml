@@ -8,7 +8,6 @@ rust-version = "1.85"
 description = "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes"
 license = "MIT"
 repository = "https://github.com/RedFoxxo/burrow"
-homepage = "https://github.com/RedFoxxo/burrow"
 readme = "README.md"
 # crates.io: at most 5 keywords, each under 20 characters.
 keywords = ["mcp", "mcp-server", "leafwiki", "wiki", "ai"]
