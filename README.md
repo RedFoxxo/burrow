@@ -1,5 +1,11 @@
 # burrow 🦊
 
+[![CI](https://github.com/RedFoxxo/burrow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/RedFoxxo/burrow/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/RedFoxxo/burrow)](https://github.com/RedFoxxo/burrow/releases/latest)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.RedFoxxo%2Fburrow-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.RedFoxxo/burrow)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)](#install)
+[![License: MIT](https://img.shields.io/github/license/RedFoxxo/burrow)](LICENSE)
+
 An MCP server for [LeafWiki](https://github.com/perber/leafwiki): AI assistants
 read, search, write and organize wiki pages. It signs in with your own LeafWiki
 account, so every change shows up under your name, and it never overwrites a
@@ -46,6 +52,16 @@ installs a given release, `BURROW_INSTALL_DIR` uses another folder, and
 `curl -fsSL …/install.sh | BURROW_VERSION=2.0.0 sh`, or in PowerShell
 `$env:BURROW_VERSION = '2.0.0'` before `irm … | iex`.
 
+### Claude Desktop
+
+Download `burrow.mcpb` from the
+[latest release](https://github.com/RedFoxxo/burrow/releases/latest) and open
+it, or drag it into **Settings → Extensions**. Claude Desktop asks for the wiki
+URL, your username and your password (kept in the system's secure storage), and
+runs burrow from the bundle; nothing else to install. burrow is also listed in
+the [MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.RedFoxxo/burrow)
+as `io.github.RedFoxxo/burrow`.
+
 ### By hand
 
 Download the file for your system from the latest release into a folder on your
@@ -62,7 +78,7 @@ browser needs `xattr -d com.apple.quarantine burrow` once before it starts.
 | Windows x64, also Windows on ARM | `burrow-windows-x64.exe` |
 
 To build from source instead (needs Rust):
-`cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.0 --locked`.
+`cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.1 --locked`.
 
 **Coming from 1.x?** burrow 1.x ran through `npx` from the npm package
 `@redfoxxo/burrow`, which gets no new versions. Install burrow as above, then

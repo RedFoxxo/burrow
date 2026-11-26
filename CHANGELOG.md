@@ -3,6 +3,20 @@
 Versions follow [Semantic Versioning](https://semver.org/). The version lives in
 `Cargo.toml`.
 
+## 2.0.1 — 2026-11-26
+
+No change to the server. New ways to get it:
+
+- **Install scripts:** `curl -fsSL …/install.sh | sh` (Linux, macOS) and
+  `irm …/install.ps1 | iex` (Windows) install or update burrow and add it to
+  your PATH. See "Install" in the README.
+- **Claude Desktop:** each release has `burrow.mcpb`, a one-click bundle for
+  every system that asks for the wiki URL and your account.
+- **MCP Registry:** listed as `io.github.RedFoxxo/burrow`, updated by every
+  release.
+- The Rust crate is named `burrow-mcp` (the name `burrow` is taken on
+  crates.io); the program is still `burrow`.
+
 ## 2.0.0 — 2026-11-26
 
 The same server, rewritten in Rust: one executable without Node.js, about 8 MB

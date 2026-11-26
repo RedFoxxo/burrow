@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.RedFoxxo/burrow",
+  "title": "burrow (LeafWiki)",
+  "description": "Read, search and edit LeafWiki pages with your own account, without overwriting others.",
+  "repository": {
+    "url": "https://github.com/RedFoxxo/burrow",
+    "source": "github"
+  },
+  "version": "0.0.0",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/RedFoxxo/burrow/releases/download/v0.0.0/burrow.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "LEAFWIKI_URL",
+          "description": "Wiki root, e.g. https://wiki.example.com (https only, except localhost)",
+          "isRequired": true
+        },
+        {
+          "name": "LEAFWIKI_USERNAME",
+          "description": "Your LeafWiki username or email; empty when the wiki has no sign-in"
+        },
+        {
+          "name": "LEAFWIKI_PASSWORD",
+          "description": "Its password",
+          "isSecret": true
+        },
+        {
+          "name": "BURROW_READ_ONLY",
+          "description": "true offers only the read_ tools",
+          "default": "false"
+        }
+      ]
+    }
+  ]
+}

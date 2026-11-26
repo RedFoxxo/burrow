@@ -76,8 +76,25 @@ jobs:
           path: dist/${{ matrix.asset }}
           if-no-files-found: error
 
-  publish:
+  # burrow.mcpb, the MCP Bundle Claude Desktop installs with one click; on macOS for lipo.
+  bundle:
     needs: [version, build]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: sh mcpb/build.sh "${{ needs.version.outputs.version }}" dist burrow.mcpb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: burrow.mcpb
+          path: burrow.mcpb
+          if-no-files-found: error
+
+  publish:
+    needs: [version, build, bundle]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -93,8 +110,50 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           cd dist
-          sha256sum burrow-* > SHA256SUMS
+          sha256sum burrow-* burrow.mcpb > SHA256SUMS
           cat SHA256SUMS
           # The changelog section of this version, without its heading.
           awk -v v="$VERSION" '$0 ~ "^## " v " " {on=1; next} /^## / {on=0} on' ../CHANGELOG.md > notes.md
-          gh release create "v$VERSION" --title "burrow $VERSION" --notes-file notes.md burrow-* SHA256SUMS
+          gh release create "v$VERSION" --title "burrow $VERSION" --notes-file notes.md burrow-* burrow.mcpb SHA256SUMS
+
+  # The MCP Registry listing (server.json) for this release. Signs in with this
+  # workflow's GitHub identity: no token, and only io.github.RedFoxxo/* names.
+  registry:
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: burrow.mcpb
+          path: dist
+      - uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
+      - name: Download and verify mcp-publisher
+        run: |
+          set -euo pipefail
+          archive=mcp-publisher_linux_amd64.tar.gz
+          base=https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER_VERSION
+          curl -fsSL -o "$archive" "$base/$archive"
+          curl -fsSL -o "$archive.sigstore.json" "$base/$archive.sigstore.json"
+          cosign verify-blob --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/$MCP_PUBLISHER_VERSION" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$archive"
+          tar xzf "$archive" mcp-publisher
+      - name: Fill in this release
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          sha=$(sha256sum dist/burrow.mcpb | cut -d' ' -f1)
+          url="https://github.com/RedFoxxo/burrow/releases/download/v$VERSION/burrow.mcpb"
+          jq --arg v "$VERSION" --arg url "$url" --arg sha "$sha" \
+            '.version = $v | .packages[0].identifier = $url | .packages[0].fileSha256 = $sha' server.json > server.tmp
+          mv server.tmp server.json
+          cat server.json
+      - run: ./mcp-publisher validate
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish

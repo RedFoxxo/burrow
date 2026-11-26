@@ -1,0 +1,78 @@
+{
+  "manifest_version": "0.3",
+  "name": "burrow",
+  "display_name": "burrow (LeafWiki)",
+  "version": "0.0.0",
+  "description": "Read, search and edit LeafWiki pages with your own account, without overwriting anyone's changes.",
+  "long_description": "burrow lets the AI read, search, write and organize pages on a [LeafWiki](https://github.com/perber/leafwiki). It signs in with your own account, so every change shows up under your name, and it never overwrites a change someone else made since your last read. Tool names start with `read_`, `write_` or `delete_`, so you can allow reading and ask before changes.",
+  "author": {
+    "name": "RedFoxxo",
+    "url": "https://github.com/RedFoxxo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RedFoxxo/burrow.git"
+  },
+  "homepage": "https://github.com/RedFoxxo/burrow",
+  "documentation": "https://github.com/RedFoxxo/burrow#readme",
+  "support": "https://github.com/RedFoxxo/burrow/issues",
+  "server": {
+    "type": "binary",
+    "entry_point": "server/burrow",
+    "mcp_config": {
+      "command": "${__dirname}/server/burrow",
+      "args": [],
+      "env": {
+        "LEAFWIKI_URL": "${user_config.leafwiki_url}",
+        "LEAFWIKI_USERNAME": "${user_config.username}",
+        "LEAFWIKI_PASSWORD": "${user_config.password}",
+        "BURROW_READ_ONLY": "${user_config.read_only}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/burrow.exe"
+        },
+        "linux": {
+          "command": "/bin/sh",
+          "args": ["${__dirname}/server/burrow-linux.sh"]
+        }
+      }
+    }
+  },
+  "tools": [],
+  "keywords": ["leafwiki", "wiki", "markdown", "documentation", "knowledge-base"],
+  "license": "MIT",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"]
+  },
+  "user_config": {
+    "leafwiki_url": {
+      "type": "string",
+      "title": "LeafWiki URL",
+      "description": "Wiki root, e.g. https://wiki.example.com (https only, except localhost)",
+      "required": true
+    },
+    "username": {
+      "type": "string",
+      "title": "Username",
+      "description": "Your LeafWiki username or email; leave empty if the wiki has no sign-in",
+      "required": false,
+      "default": ""
+    },
+    "password": {
+      "type": "string",
+      "title": "Password",
+      "description": "Its password (accounts with two-factor codes can't sign in)",
+      "sensitive": true,
+      "required": false,
+      "default": ""
+    },
+    "read_only": {
+      "type": "boolean",
+      "title": "Read-only",
+      "description": "Offer only the read_ tools",
+      "required": false,
+      "default": false
+    }
+  }
+}

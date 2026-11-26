@@ -1,13 +1,23 @@
 [package]
-name = "burrow"
+# On crates.io as burrow-mcp (`burrow` is another crate there); the program is still `burrow`.
+name = "burrow-mcp"
 # The one place the version lives: `burrow --version` and `serverInfo.version` read it.
-version = "2.0.0"
+version = "2.0.1"
 edition = "2024"
 rust-version = "1.85"
 description = "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes"
 license = "MIT"
 repository = "https://github.com/RedFoxxo/burrow"
-publish = false
+homepage = "https://github.com/RedFoxxo/burrow"
+readme = "README.md"
+keywords = ["mcp", "leafwiki", "wiki", "ai", "model-context-protocol"]
+categories = ["command-line-utilities", "web-programming::http-client"]
+# What `cargo install burrow-mcp` builds from; the golden tool lists keep `cargo test` working there.
+include = ["/src/**", "/tests/golden/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/CHANGELOG.md", "/LICENSE"]
+
+[[bin]]
+name = "burrow"
+path = "src/main.rs"
 
 [dependencies]
 base64 = "0.23"
