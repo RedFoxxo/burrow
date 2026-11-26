@@ -301,3 +301,26 @@ async fn refuses_invalid_arguments_and_unknown_tools() {
         }
     );
 }
+
+#[test]
+fn page_has_children_advice_follows_the_refused_request() {
+    let refused = |request: &str| {
+        let e = crate::http::WikiErr {
+            status: 400,
+            message: "Page has children, use recursive delete".into(),
+            code: Some("page_has_children".into()),
+            body: String::new(),
+            request: Some(request.into()),
+        };
+        failure("Could not do it", Some(&e)).text
+    };
+    let delete = refused("DELETE /api/pages/p1?version=v1");
+    assert!(
+        delete.contains("pass recursive: true only if the user asked"),
+        "{delete}"
+    );
+    // Converting a section has no recursive option: the advice is to move the children.
+    let convert = refused("POST /api/pages/convert/p1");
+    assert!(convert.contains("write_move"), "{convert}");
+    assert!(!convert.contains("recursive: true"), "{convert}");
+}
