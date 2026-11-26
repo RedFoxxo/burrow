@@ -25,6 +25,29 @@ fn has(actual: &Value, expected: &Value) -> bool {
     }
 }
 
+/// Not ignored: a matcher that always passes would hollow out every wiki test.
+#[test]
+fn has_matches_parts_and_rejects_differences() {
+    let page = serde_json::json!({ "title": "A", "tags": ["x", "y"], "meta": { "by": "editor", "at": 1 } });
+    assert!(has(
+        &page,
+        &serde_json::json!({ "title": "A", "meta": { "by": "editor" } })
+    ));
+    assert!(has(&page, &serde_json::json!({ "tags": ["x", "y"] })));
+    assert!(!has(&page, &serde_json::json!({ "title": "B" })));
+    assert!(!has(
+        &page,
+        &serde_json::json!({ "meta": { "by": "viewer" } })
+    ));
+    assert!(!has(&page, &serde_json::json!({ "missing": null })));
+    assert!(!has(&page, &serde_json::json!({ "tags": ["x"] })));
+    assert!(!has(&page, &serde_json::json!({ "tags": "x" })));
+    assert!(!has(
+        &serde_json::json!([{ "id": 1 }, { "id": 2 }]),
+        &serde_json::json!([{ "id": 1 }])
+    ));
+}
+
 #[track_caller]
 pub fn assert_has(actual: &Value, expected: Value) {
     assert!(
