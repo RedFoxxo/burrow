@@ -110,7 +110,10 @@ Build steps:
 ]
 ```
 
-CMD arguments: `["mcp-proxy", "--", "burrow"]`
+CMD arguments: `["mcp-proxy", "--pass-environment", "--", "burrow"]`. Without
+`--pass-environment`, mcp-proxy starts burrow without the container's
+variables, so burrow stops at "LEAFWIKI_URL is required" (tested with
+mcp-proxy 0.15.0 on `debian:trixie-slim`: 39 tools over SSE with the flag).
 
 Environment variables JSON schema (burrow answers `tools/list` with only the
 placeholder URL; it signs in on the first tool call):
