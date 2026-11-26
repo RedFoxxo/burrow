@@ -6,6 +6,8 @@
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)](#install)
 [![License: MIT](https://img.shields.io/github/license/RedFoxxo/burrow)](LICENSE)
 
+[![burrow MCP server](https://glama.ai/mcp/servers/RedFoxxo/burrow/badges/card.svg)](https://glama.ai/mcp/servers/RedFoxxo/burrow)
+
 An MCP server for [LeafWiki](https://github.com/perber/leafwiki): AI assistants
 read, search, write and organize wiki pages. It signs in with your own LeafWiki
 account, so every change shows up under your name, and it never overwrites a
