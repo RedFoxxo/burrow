@@ -146,8 +146,10 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_lookup_path",
-            description: "Whether a path exists, segment by segment, and whether it can be created.",
-            fields: vec![trimmed("path").nonempty()],
+            description: "Check a wiki path without changing anything: for each segment whether it exists (and its id), and whether the whole path exists or can be created. To create the missing segments, use write_ensure_path.",
+            fields: vec![trimmed("path").nonempty().describe(
+                "Wiki path like docs/team/onboarding; slashes at either end are ignored",
+            )],
             handler: handler!(|ctx, args| {
                 let path = args.str("path");
                 success(
@@ -161,7 +163,11 @@ pub fn tools() -> Vec<Tool> {
         Tool {
             name: "read_find_title",
             description: "Pages whose title matches exactly (case-insensitive), with path and id.",
-            fields: vec![trimmed("title").nonempty()],
+            fields: vec![
+                trimmed("title")
+                    .nonempty()
+                    .describe("Whole title to match, in any case"),
+            ],
             handler: handler!(|ctx, args| {
                 let title = args.str("title");
                 let r = ctx
@@ -176,8 +182,10 @@ pub fn tools() -> Vec<Tool> {
             name: "read_search",
             description: "Full-text search over page titles, content and tags, best match first, with excerpts.",
             fields: vec![
-                trimmed("query").nonempty(),
-                integer("offset", Some(0), None).optional(),
+                trimmed("query").nonempty().describe("Words to search for"),
+                integer("offset", Some(0), None)
+                    .optional()
+                    .describe("Results to skip, for the next page of hits"),
                 limit("limit", 100, "Default 20"),
             ],
             handler: handler!(|ctx, args| {
@@ -235,7 +243,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_search_status",
-            description: "Whether the search index is still building, and how many pages it holds.",
+            description: "Report the search index: whether it is still building (active), how many pages are indexed or failed, and when it last finished. Check it when read_search misses a page that was just changed.",
             fields: vec![],
             handler: handler!(|ctx, args| {
                 success(
@@ -248,7 +256,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_tags",
-            description: "Tags in use with how many pages carry each.",
+            description: "List the tags in use, each with how many pages carry it. To find the pages that carry given tags, use read_pages_by_tags.",
             fields: vec![
                 text("filter")
                     .optional()
@@ -266,8 +274,12 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_pages_by_tags",
-            description: "Pages carrying all of the given tags.",
-            fields: vec![names("tags").nonempty()],
+            description: "List the pages that carry every one of the given tags, with id, path, title, tags and last change. For the tags in use, use read_tags; for free text, read_search.",
+            fields: vec![
+                names("tags")
+                    .nonempty()
+                    .describe("Tags a page must all carry"),
+            ],
             handler: handler!(|ctx, args| {
                 let tags = args.opt_strs("tags").unwrap_or_default();
                 let r = ctx
@@ -298,7 +310,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_properties",
-            description: "Property keys in use (structured page metadata) with how many pages set each.",
+            description: "List the property keys in use (key-value page metadata, e.g. owner), each with how many pages set it. To find the pages, use read_pages_by_property.",
             fields: vec![
                 text("filter")
                     .optional()
@@ -316,8 +328,15 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_pages_by_property",
-            description: "Pages that set a property, optionally to one value.",
-            fields: vec![trimmed("key").nonempty(), text("value").optional()],
+            description: "List the pages that set a property key, optionally only those with one value, with id, path, title, their properties and last change. For the keys in use, use read_properties.",
+            fields: vec![
+                trimmed("key")
+                    .nonempty()
+                    .describe("Property key, e.g. owner"),
+                text("value")
+                    .optional()
+                    .describe("Only pages with exactly this value; omit for any"),
+            ],
             handler: handler!(|ctx, args| {
                 let key = args.str("key");
                 let r = ctx
@@ -355,7 +374,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_links",
-            description: "A page's links: pages linking to it, pages it links to, and broken links both ways.",
+            description: "Show a page's links: pages that link to it, pages it links to, and broken links in both directions. Use it before moving or deleting a page; read_broken_links covers the whole wiki.",
             fields: vec![params::page()],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
@@ -409,7 +428,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_broken_links",
-            description: "Every broken link in the wiki (admins only).",
+            description: "List every broken link in the wiki: the linking page's path and id, and the missing target. Admins only (others get status 403); for one page, use read_links.",
             fields: vec![],
             handler: handler!(|ctx, args| {
                 let r = ctx
@@ -478,7 +497,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_revision",
-            description: "One past revision of a page with its full content.",
+            description: "Read one past revision of a page: who made it, when, and the full Markdown content at that time. Get revision ids from read_revisions; to see what changed, use read_compare_revisions.",
             fields: vec![
                 params::page(),
                 trimmed("revision")
@@ -576,7 +595,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_favorites",
-            description: "The signed-in user's favorite pages.",
+            description: "List the signed-in user's favorite pages with id, path, title and version. Add or remove them with write_favorite.",
             fields: vec![],
             handler: handler!(|ctx, args| {
                 let r = ctx
@@ -591,7 +610,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_assets",
-            description: "Files attached to a page, with the URL to embed or link them.",
+            description: "List the files attached to a page: name, the path to use in Markdown links, and the absolute URL. Attach with write_upload_asset; rename or delete with write_rename_asset and delete_asset.",
             fields: vec![params::page()],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
@@ -611,8 +630,13 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_slug",
-            description: "The slug LeafWiki would give a title, unique under its parent (editors only).",
-            fields: vec![trimmed("title").nonempty(), params::parent()],
+            description: "Suggest the slug (URL segment) LeafWiki would derive from a title, unique under the parent; changes nothing. Editors only. write_create_page and write_copy already do this when slug is omitted.",
+            fields: vec![
+                trimmed("title")
+                    .nonempty()
+                    .describe("Title to derive the slug from"),
+                params::parent(),
+            ],
             handler: handler!(|ctx, args| {
                 let title = args.str("title");
                 let parent = parent_id(ctx, args.opt_str("parent").as_deref()).await?;

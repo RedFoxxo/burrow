@@ -3,6 +3,15 @@
 Versions follow [Semantic Versioning](https://semver.org/). The version lives in
 `Cargo.toml`.
 
+## 2.0.3 — 2026-11-26
+
+- Tool descriptions say what each tool answers, when to use it and which
+  neighbouring tool to use instead, and every parameter is described. The tool
+  list grows from about 4,200 to about 5,000 tokens (read-only: 1,700 to
+  2,200); tool names and parameters are unchanged.
+- A Dockerfile (a 22 MB Alpine image) and `glama.json`, so directories such as
+  Glama build and list the Rust server.
+
 ## 2.0.2 — 2026-11-26
 
 - **Fix:** the Claude Desktop bundle (`burrow.mcpb`) failed to start burrow

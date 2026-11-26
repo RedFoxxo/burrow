@@ -2,7 +2,7 @@
 # On crates.io as burrow-mcp (`burrow` is another crate there); the program is still `burrow`.
 name = "burrow-mcp"
 # The one place the version lives: `burrow --version` and `serverInfo.version` read it.
-version = "2.0.2"
+version = "2.0.3"
 edition = "2024"
 rust-version = "1.85"
 description = "MCP server for LeafWiki: read, search, write and organize wiki pages with your own account, without overwriting anyone's changes"

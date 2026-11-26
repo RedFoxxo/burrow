@@ -80,7 +80,9 @@ browser needs `xattr -d com.apple.quarantine burrow` once before it starts.
 | Windows x64, also Windows on ARM | `burrow-windows-x64.exe` |
 
 To build from source instead (needs Rust):
-`cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.1 --locked`.
+`cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.3 --locked`.
+Or as a container image: `docker build -t burrow .` in a clone, then start it
+with `docker run -i --rm -e LEAFWIKI_URL -e LEAFWIKI_USERNAME -e LEAFWIKI_PASSWORD burrow`.
 
 **Coming from 1.x?** burrow 1.x ran through `npx` from the npm package
 `@redfoxxo/burrow`, which gets no new versions. Install burrow as above, then
@@ -214,8 +216,8 @@ the MCP tool annotations, and delete tools destructive.
 | `write_` | Creates, changes, moves and copies pages and files | ask |
 | `delete_` | Deletes pages and files | ask |
 
-39 tools, about 4,200 tokens of tool definitions; `BURROW_READ_ONLY=true`
-leaves the 20 read tools, about 1,700. Pages are named by id or by path
+39 tools, about 5,000 tokens of tool definitions; `BURROW_READ_ONLY=true`
+leaves the 20 read tools, about 2,200. Pages are named by id or by path
 (`docs/runbooks/deploy`).
 
 - read: `read_wiki`, `read_tree`, `read_page`, `read_lookup_path`,

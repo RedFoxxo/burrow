@@ -62,13 +62,14 @@
     },
     {
       "name": "read_lookup_path",
-      "description": "Whether a path exists, segment by segment, and whether it can be created.",
+      "description": "Check a wiki path without changing anything: for each segment whether it exists (and its id), and whether the whole path exists or can be created. To create the missing segments, use write_ensure_path.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "path": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Wiki path like docs/team/onboarding; slashes at either end are ignored"
           }
         },
         "required": [
@@ -88,7 +89,8 @@
         "properties": {
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Whole title to match, in any case"
           }
         },
         "required": [
@@ -108,9 +110,11 @@
         "properties": {
           "query": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Words to search for"
           },
           "offset": {
+            "description": "Results to skip, for the next page of hits",
             "type": "integer",
             "minimum": 0
           },
@@ -132,7 +136,7 @@
     },
     {
       "name": "read_search_status",
-      "description": "Whether the search index is still building, and how many pages it holds.",
+      "description": "Report the search index: whether it is still building (active), how many pages are indexed or failed, and when it last finished. Check it when read_search misses a page that was just changed.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -144,7 +148,7 @@
     },
     {
       "name": "read_tags",
-      "description": "Tags in use with how many pages carry each.",
+      "description": "List the tags in use, each with how many pages carry it. To find the pages that carry given tags, use read_pages_by_tags.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -167,7 +171,7 @@
     },
     {
       "name": "read_pages_by_tags",
-      "description": "Pages carrying all of the given tags.",
+      "description": "List the pages that carry every one of the given tags, with id, path, title, tags and last change. For the tags in use, use read_tags; for free text, read_search.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -177,7 +181,8 @@
             "items": {
               "type": "string",
               "minLength": 1
-            }
+            },
+            "description": "Tags a page must all carry"
           }
         },
         "required": [
@@ -191,7 +196,7 @@
     },
     {
       "name": "read_properties",
-      "description": "Property keys in use (structured page metadata) with how many pages set each.",
+      "description": "List the property keys in use (key-value page metadata, e.g. owner), each with how many pages set it. To find the pages, use read_pages_by_property.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -214,15 +219,17 @@
     },
     {
       "name": "read_pages_by_property",
-      "description": "Pages that set a property, optionally to one value.",
+      "description": "List the pages that set a property key, optionally only those with one value, with id, path, title, their properties and last change. For the keys in use, use read_properties.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "key": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Property key, e.g. owner"
           },
           "value": {
+            "description": "Only pages with exactly this value; omit for any",
             "type": "string"
           }
         },
@@ -237,7 +244,7 @@
     },
     {
       "name": "read_links",
-      "description": "A page's links: pages linking to it, pages it links to, and broken links both ways.",
+      "description": "Show a page's links: pages that link to it, pages it links to, and broken links in both directions. Use it before moving or deleting a page; read_broken_links covers the whole wiki.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -258,7 +265,7 @@
     },
     {
       "name": "read_broken_links",
-      "description": "Every broken link in the wiki (admins only).",
+      "description": "List every broken link in the wiki: the linking page's path and id, and the missing target. Admins only (others get status 403); for one page, use read_links.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -301,7 +308,7 @@
     },
     {
       "name": "read_revision",
-      "description": "One past revision of a page with its full content.",
+      "description": "Read one past revision of a page: who made it, when, and the full Markdown content at that time. Get revision ids from read_revisions; to see what changed, use read_compare_revisions.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -359,7 +366,7 @@
     },
     {
       "name": "read_favorites",
-      "description": "The signed-in user's favorite pages.",
+      "description": "List the signed-in user's favorite pages with id, path, title and version. Add or remove them with write_favorite.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -371,7 +378,7 @@
     },
     {
       "name": "read_assets",
-      "description": "Files attached to a page, with the URL to embed or link them.",
+      "description": "List the files attached to a page: name, the path to use in Markdown links, and the absolute URL. Attach with write_upload_asset; rename or delete with write_rename_asset and delete_asset.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -392,13 +399,14 @@
     },
     {
       "name": "read_slug",
-      "description": "The slug LeafWiki would give a title, unique under its parent (editors only).",
+      "description": "Suggest the slug (URL segment) LeafWiki would derive from a title, unique under the parent; changes nothing. Editors only. write_create_page and write_copy already do this when slug is omitted.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Title to derive the slug from"
           },
           "parent": {
             "description": "Parent id or path; omit for the top level",
@@ -451,7 +459,7 @@
     },
     {
       "name": "write_create_page",
-      "description": "Create a page (or section) under a parent, optionally with content, tags and properties.",
+      "description": "Create a page, or a section (a folder-like page for children), under a parent, optionally with content, tags and properties; answers with its id, path and version. To create a whole missing path at once, use write_ensure_path.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -461,7 +469,8 @@
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Page title"
           },
           "slug": {
             "description": "URL segment; omit to derive it from the title",
@@ -513,11 +522,13 @@
         "properties": {
           "path": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Wiki path like docs/team/onboarding"
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Title of the last segment"
           },
           "kind": {
             "description": "Of the last segment; section: a folder-like page for children",
@@ -555,6 +566,7 @@
             "description": "version from your last read of the page"
           },
           "title": {
+            "description": "New title",
             "type": "string",
             "minLength": 1
           },
@@ -633,7 +645,7 @@
     },
     {
       "name": "write_append",
-      "description": "Add Markdown at the end of a page.",
+      "description": "Add Markdown at the end of a page, after a blank line; the rest stays as it is. Needs no version: it appends to the latest one. To change existing text, use write_edit_text.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -644,7 +656,8 @@
           },
           "text": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Markdown to add"
           }
         },
         "required": [
@@ -659,7 +672,7 @@
     },
     {
       "name": "write_tags",
-      "description": "Add or remove tags on a page, keeping the others.",
+      "description": "Add or remove tags on a page, keeping its other tags; answers with the new tag list. To replace the whole list, use write_update_page.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -669,6 +682,7 @@
             "description": "Page id or path"
           },
           "add": {
+            "description": "Tags to add",
             "type": "array",
             "items": {
               "type": "string",
@@ -676,6 +690,7 @@
             }
           },
           "remove": {
+            "description": "Tags to remove",
             "type": "array",
             "items": {
               "type": "string",
@@ -694,7 +709,7 @@
     },
     {
       "name": "write_properties",
-      "description": "Set or remove properties (structured metadata) on a page, keeping the others.",
+      "description": "Set or remove properties (key-value page metadata) on a page, keeping the others; answers with the new properties. To replace them all, use write_update_page.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -704,12 +719,14 @@
             "description": "Page id or path"
           },
           "set": {
+            "description": "Keys and values to set",
             "type": "object",
             "additionalProperties": {
               "type": "string"
             }
           },
           "remove": {
+            "description": "Keys to remove",
             "type": "array",
             "items": {
               "type": "string"
@@ -759,7 +776,7 @@
     },
     {
       "name": "write_sort",
-      "description": "Set the order of the children of a page.",
+      "description": "Reorder the children of a page, or the top level; answers with the ids in their new order. Pages keep their parent: to move one elsewhere, use write_move.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -790,7 +807,7 @@
     },
     {
       "name": "write_pin",
-      "description": "Pin a page to the top of its siblings, or unpin it.",
+      "description": "Pin a page so it stays above its unpinned siblings in the tree, or unpin it; answers with the page.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -800,7 +817,8 @@
             "description": "Page id or path"
           },
           "pinned": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "true pins, false unpins"
           }
         },
         "required": [
@@ -815,7 +833,7 @@
     },
     {
       "name": "write_favorite",
-      "description": "Add a page to the signed-in user's favorites, or remove it.",
+      "description": "Add a page to the signed-in user's favorites, or remove it; only that user sees them. List them with read_favorites.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -825,7 +843,8 @@
             "description": "Page id or path"
           },
           "favorite": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "true adds, false removes"
           }
         },
         "required": [
@@ -840,7 +859,7 @@
     },
     {
       "name": "write_convert",
-      "description": "Turn a page into a section or a section into a page.",
+      "description": "Turn a page into a section (a folder-like page that holds children) or a section into a page; answers with the page.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -870,7 +889,7 @@
     },
     {
       "name": "write_copy",
-      "description": "Copy a page (content, tags, properties, files) under a parent with a new title.",
+      "description": "Copy a page's content, tags, properties and files to a new page with a new title under a parent; the original stays. Answers with the copy's id and path.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -885,7 +904,8 @@
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Title of the copy"
           },
           "slug": {
             "description": "URL segment; omit to derive it from the title",
@@ -934,6 +954,7 @@
             "type": "string"
           },
           "position": {
+            "description": "Index among the new siblings; default last",
             "type": "integer",
             "minimum": 0
           },
@@ -993,7 +1014,8 @@
           "filename": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^[^/\\\\]+$"
+            "pattern": "^[^/\\\\]+$",
+            "description": "Name to store it under, e.g. diagram.png"
           },
           "base64": {
             "type": "string",
@@ -1014,7 +1036,7 @@
     },
     {
       "name": "write_rename_asset",
-      "description": "Rename a file attached to a page.",
+      "description": "Rename a file attached to a page; answers with its new path and URL. Links to the old name in page content are not updated: fix them with write_edit_text.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1025,12 +1047,14 @@
           },
           "from": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Current file name, as read_assets lists it"
           },
           "to": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^[^/\\\\]+$"
+            "pattern": "^[^/\\\\]+$",
+            "description": "New file name"
           }
         },
         "required": [
@@ -1077,7 +1101,7 @@
     },
     {
       "name": "delete_asset",
-      "description": "Delete a file attached to a page.",
+      "description": "Delete a file attached to a page. Links to it in page content are not removed and will break; read_assets lists the files.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1088,7 +1112,8 @@
           },
           "filename": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "File name, as read_assets lists it"
           }
         },
         "required": [

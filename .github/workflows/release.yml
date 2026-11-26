@@ -102,6 +102,9 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, so moving stable below is an ordinary fast-forward push.
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -119,6 +122,11 @@ jobs:
           # The changelog section of this version, without its heading.
           awk -v v="$VERSION" '$0 ~ "^## " v " " {on=1; next} /^## / {on=0} on' ../CHANGELOG.md > notes.md
           gh release create "v$VERSION" --title "burrow $VERSION" --notes-file notes.md burrow-* burrow.mcpb SHA256SUMS
+      # stable is the default branch, which GitHub and Glama show: it follows
+      # releases. A plain push, so it fails instead of rewriting stable if the
+      # tag is not ahead of it.
+      - name: Move stable to this release
+        run: git push origin "HEAD:refs/heads/stable"
 
   # The MCP Registry listing (server.json) for this release. Signs in with this
   # workflow's GitHub identity: no token, and only io.github.RedFoxxo/* names.

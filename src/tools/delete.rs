@@ -29,8 +29,13 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "delete_asset",
-            description: "Delete a file attached to a page.",
-            fields: vec![params::page(), trimmed("filename").nonempty()],
+            description: "Delete a file attached to a page. Links to it in page content are not removed and will break; read_assets lists the files.",
+            fields: vec![
+                params::page(),
+                trimmed("filename")
+                    .nonempty()
+                    .describe("File name, as read_assets lists it"),
+            ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
                 let filename = args.str("filename");

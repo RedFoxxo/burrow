@@ -99,10 +99,10 @@ pub fn tools() -> Vec<Tool> {
     vec![
         Tool {
             name: "write_create_page",
-            description: "Create a page (or section) under a parent, optionally with content, tags and properties.",
+            description: "Create a page, or a section (a folder-like page for children), under a parent, optionally with content, tags and properties; answers with its id, path and version. To create a whole missing path at once, use write_ensure_path.",
             fields: vec![
                 params::parent(),
-                trimmed("title").nonempty(),
+                trimmed("title").nonempty().describe("Page title"),
                 slug(),
                 params::kind().optional(),
                 text("content")
@@ -144,8 +144,12 @@ pub fn tools() -> Vec<Tool> {
             name: "write_ensure_path",
             description: "Make sure a path exists, creating every missing segment; the last one gets the title.",
             fields: vec![
-                trimmed("path").nonempty(),
-                trimmed("title").nonempty(),
+                trimmed("path")
+                    .nonempty()
+                    .describe("Wiki path like docs/team/onboarding"),
+                trimmed("title")
+                    .nonempty()
+                    .describe("Title of the last segment"),
                 params::kind()
                     .optional()
                     .describe("Of the last segment; section: a folder-like page for children"),
@@ -167,7 +171,7 @@ pub fn tools() -> Vec<Tool> {
             fields: vec![
                 params::page(),
                 params::version(),
-                trimmed("title").nonempty().optional(),
+                trimmed("title").nonempty().optional().describe("New title"),
                 slug().describe("New URL segment; changes the path, which can break links"),
                 text("content")
                     .optional()
@@ -245,8 +249,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_append",
-            description: "Add Markdown at the end of a page.",
-            fields: vec![params::page(), text("text").nonempty()],
+            description: "Add Markdown at the end of a page, after a blank line; the rest stays as it is. Needs no version: it appends to the latest one. To change existing text, use write_edit_text.",
+            fields: vec![
+                params::page(),
+                text("text").nonempty().describe("Markdown to add"),
+            ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
                 let content = p.text();
@@ -273,11 +280,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_tags",
-            description: "Add or remove tags on a page, keeping the others.",
+            description: "Add or remove tags on a page, keeping its other tags; answers with the new tag list. To replace the whole list, use write_update_page.",
             fields: vec![
                 params::page(),
-                names("add").optional(),
-                names("remove").optional(),
+                names("add").optional().describe("Tags to add"),
+                names("remove").optional().describe("Tags to remove"),
             ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
@@ -314,11 +321,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_properties",
-            description: "Set or remove properties (structured metadata) on a page, keeping the others.",
+            description: "Set or remove properties (key-value page metadata) on a page, keeping the others; answers with the new properties. To replace them all, use write_update_page.",
             fields: vec![
                 params::page(),
-                record("set").optional(),
-                texts("remove").optional(),
+                record("set").optional().describe("Keys and values to set"),
+                texts("remove").optional().describe("Keys to remove"),
             ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
@@ -382,7 +389,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_sort",
-            description: "Set the order of the children of a page.",
+            description: "Reorder the children of a page, or the top level; answers with the ids in their new order. Pages keep their parent: to move one elsewhere, use write_move.",
             fields: vec![
                 trimmed("parent")
                     .nonempty()
@@ -414,8 +421,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_pin",
-            description: "Pin a page to the top of its siblings, or unpin it.",
-            fields: vec![params::page(), boolean("pinned")],
+            description: "Pin a page so it stays above its unpinned siblings in the tree, or unpin it; answers with the page.",
+            fields: vec![
+                params::page(),
+                boolean("pinned").describe("true pins, false unpins"),
+            ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
                 let pinned = args.opt_bool("pinned").unwrap_or(false);
@@ -430,8 +440,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_favorite",
-            description: "Add a page to the signed-in user's favorites, or remove it.",
-            fields: vec![params::page(), boolean("favorite")],
+            description: "Add a page to the signed-in user's favorites, or remove it; only that user sees them. List them with read_favorites.",
+            fields: vec![
+                params::page(),
+                boolean("favorite").describe("true adds, false removes"),
+            ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
                 let favorite = args.opt_bool("favorite").unwrap_or(false);
@@ -447,7 +460,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_convert",
-            description: "Turn a page into a section or a section into a page.",
+            description: "Turn a page into a section (a folder-like page that holds children) or a section into a page; answers with the page.",
             fields: vec![params::page(), params::kind()],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;
@@ -470,11 +483,11 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_copy",
-            description: "Copy a page (content, tags, properties, files) under a parent with a new title.",
+            description: "Copy a page's content, tags, properties and files to a new page with a new title under a parent; the original stays. Answers with the copy's id and path.",
             fields: vec![
                 params::page(),
                 params::parent(),
-                trimmed("title").nonempty(),
+                trimmed("title").nonempty().describe("Title of the copy"),
                 slug(),
             ],
             handler: handler!(|ctx, args| {
@@ -505,7 +518,9 @@ pub fn tools() -> Vec<Tool> {
                     .describe("New title (rename)"),
                 slug().describe("New slug (rename)"),
                 params::parent().describe("New parent id or path (move); \"/\" for the top level"),
-                integer("position", Some(0), None).optional(),
+                integer("position", Some(0), None)
+                    .optional()
+                    .describe("Index among the new siblings; default last"),
                 boolean("rewriteLinks").optional().describe("Default true"),
             ],
             handler: handler!(|ctx, args| {
@@ -573,7 +588,8 @@ pub fn tools() -> Vec<Tool> {
                 params::page(),
                 trimmed("filename")
                     .nonempty()
-                    .pattern(FILE_NAME, "a file name, not a path"),
+                    .pattern(FILE_NAME, "a file name, not a path")
+                    .describe("Name to store it under, e.g. diagram.png"),
                 text("base64")
                     .nonempty()
                     .describe("File content as base64; local paths are not read"),
@@ -625,13 +641,16 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_rename_asset",
-            description: "Rename a file attached to a page.",
+            description: "Rename a file attached to a page; answers with its new path and URL. Links to the old name in page content are not updated: fix them with write_edit_text.",
             fields: vec![
                 params::page(),
-                trimmed("from").nonempty(),
+                trimmed("from")
+                    .nonempty()
+                    .describe("Current file name, as read_assets lists it"),
                 trimmed("to")
                     .nonempty()
-                    .pattern(FILE_NAME, "a file name, not a path"),
+                    .pattern(FILE_NAME, "a file name, not a path")
+                    .describe("New file name"),
             ],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;

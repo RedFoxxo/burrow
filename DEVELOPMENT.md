@@ -79,6 +79,17 @@ The asset names (`burrow-linux-x64`, `burrow-linux-arm64`, `burrow-macos-x64`,
 `install.sh` and `install.ps1`: never rename them. Linux builds are static
 (musl), so one file runs on every distribution.
 
+## Directories (Glama)
+
+Glama lists burrow from the default branch, `stable`, which the release
+moves forward. It builds the `Dockerfile`, starts the image and scores the
+tool descriptions from `tools/list`; the image starts with a placeholder
+`LEAFWIKI_URL` and no account, since burrow signs in only on the first call.
+`glama.json` names the maintainers who can claim the listing. Descriptions are
+graded per tool and the weakest weighs most: each says what the tool answers,
+when to use it and which neighbouring tool instead, and every parameter has a
+description.
+
 ## Install scripts
 
 `install.sh` (Linux, macOS) and `install.ps1` (Windows PowerShell 5.1 and
