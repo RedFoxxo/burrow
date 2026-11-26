@@ -17,7 +17,7 @@ jobs:
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: check
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
@@ -53,7 +53,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
       - if: contains(matrix.target, 'musl')
         run: command -v clang || (sudo apt-get update && sudo apt-get install -y clang)
@@ -70,7 +70,7 @@ jobs:
           # x64 macOS builds on an arm64 runner; Rosetta runs it.
           "dist/${{ matrix.asset }}" --version | tee version.txt
           grep -qx "burrow ${{ needs.version.outputs.version }}" version.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.asset }}
           path: dist/${{ matrix.asset }}
@@ -81,15 +81,15 @@ jobs:
     needs: [version, build]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
       - run: sh mcpb/build.sh "${{ needs.version.outputs.version }}" dist burrow.mcpb
       # As Claude Desktop extracts it on macOS: no execute bits, quarantine flag set.
       - run: sh mcpb/smoke.sh burrow.mcpb
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: burrow.mcpb
           path: burrow.mcpb
@@ -101,11 +101,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history, so moving stable below is an ordinary fast-forward push.
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -139,8 +139,8 @@ jobs:
     env:
       MCP_PUBLISHER_VERSION: v1.8.16
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: burrow.mcpb
           path: dist
