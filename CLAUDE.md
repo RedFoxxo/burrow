@@ -32,9 +32,9 @@ purpose.
 ## Stack
 
 Rust (edition 2024, stable): `tokio` (one thread), `reqwest` with rustls and
-ring, `serde_json`, `regex`. No other runtime dependency. `tests/wiki/` is a
-TypeScript harness (`@modelcontextprotocol/sdk`, `vitest`) that drives the built
-executable against a real LeafWiki.
+ring, `serde_json`, `regex`. No other runtime dependency. `tests/wiki/` runs
+the built executable over stdio against a real LeafWiki (`cargo test --
+--include-ignored`).
 
 ## LeafWiki API facts (v0.14.2)
 

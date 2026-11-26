@@ -5,16 +5,13 @@ instance. Read it before changing behaviour.
 
 ## Commands
 
-burrow is a Rust crate (stable Rust). The real-wiki tests drive the built
-executable through the official MCP client, so they need Node.js 22.12 or newer.
+burrow is a Rust crate (stable Rust); nothing else is needed to build or test it.
 
 ```sh
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
-cargo test          # unit tests, no network
-npm ci              # once: the real-wiki test harness
-npm run typecheck   # the harness
-npm run test:wiki   # release build, then every tool against a real LeafWiki
+cargo test                        # unit tests, no network
+cargo test -- --include-ignored   # also every tool against a real LeafWiki
 ```
 
 Run all of them before every commit; CI runs the same, plus `cargo test` on
@@ -28,13 +25,14 @@ names, parameters, descriptions and hints are a contract with the Mamami plugin
 and with every model prompt, so a change there is deliberate and updates the
 golden files with it.
 
-`npm run test:wiki` builds `target/release/burrow`, downloads the LeafWiki
-release named in `tests/wiki/leafwiki.ts` into `.cache/leafwiki/`, checks its
-sha256, and starts it on a free local port with throwaway data, revisions and
-link refactoring on, plus an editor and a viewer account. Each test starts
-burrow over stdio. The last test fails if a tool was never called, so a new
-tool needs a test there. `BURROW_BIN=<path> npx vitest run --config
-vitest.wiki.config.ts` runs the same tests against another build.
+The real-wiki tests (`tests/wiki/`) are ignored by a plain `cargo test` because
+the first run downloads the LeafWiki release named in `tests/wiki/leafwiki.rs`
+into `target/tmp/leafwiki/` and checks its sha256. Each test starts LeafWiki on
+a free local port with throwaway data, revisions and link refactoring on, plus
+an editor and a viewer account, and talks to burrow over stdio as an MCP client
+does. The tool scenario fails if a tool was never called, so a new tool needs a
+step there. `cargo test --release -- --include-ignored` tests the release build;
+`BURROW_BIN=<path> cargo test --test wiki -- --ignored` tests another one.
 
 Tool definitions are sent to the model on every request. After changing a tool
 description or schema, compare the size of `tools/list` before and after, and
@@ -42,8 +40,8 @@ update the token figures under "Tools" in `README.md`.
 
 ## Moving to a new LeafWiki release
 
-1. Change `LEAFWIKI_VERSION` in `tests/wiki/leafwiki.ts`.
-2. `npm run test:wiki`. Fix what broke; record new API facts in `CLAUDE.md`.
+1. Change `LEAFWIKI_VERSION` in `tests/wiki/leafwiki.rs`.
+2. `cargo test -- --include-ignored`. Fix what broke; record new API facts in `CLAUDE.md`.
 3. Update "Tested against" in `README.md` and the changelog.
 
 ## Releasing

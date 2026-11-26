@@ -19,15 +19,8 @@ jobs:
       - run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
-      - run: cargo test --locked
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      # Builds the release binary, then every tool against the pinned LeafWiki release (tests/wiki/leafwiki.ts).
-      - run: npm run test:wiki
+      # The unit tests, then every tool against the pinned LeafWiki release (tests/wiki/leafwiki.rs).
+      - run: cargo test --locked -- --include-ignored
 
   # The unit tests on the other systems the release ships for.
   other-systems:
