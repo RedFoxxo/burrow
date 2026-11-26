@@ -57,6 +57,19 @@ update the token figures under "Tools" in `README.md`.
    publishes a GitHub Release with them, `SHA256SUMS` and the changelog section.
 
 The asset names (`burrow-linux-x64`, `burrow-linux-arm64`, `burrow-macos-x64`,
-`burrow-macos-arm64`, `burrow-windows-x64.exe`) are a contract with installers,
-the Mamami plugin among them: never rename them. Linux builds are static (musl),
-so one file runs on every distribution.
+`burrow-macos-arm64`, `burrow-windows-x64.exe`) are a contract with
+`install.sh` and `install.ps1`: never rename them. Linux builds are static
+(musl), so one file runs on every distribution.
+
+## Install scripts
+
+`install.sh` (Linux, macOS) and `install.ps1` (Windows PowerShell 5.1 and
+later) download a release file, check it against `SHA256SUMS` and install it.
+Users run them from `main` (`curl … | sh`, `irm … | iex`), so a change there
+reaches everyone at once; CI runs both against the latest release on Linux,
+macOS and Windows, twice each.
+
+The Mamami installer runs these scripts too. Their default folders
+(`~/.local/bin`, `%LOCALAPPDATA%\Programs\burrow`) and settings
+(`BURROW_VERSION`, `BURROW_INSTALL_DIR`, `BURROW_NO_MODIFY_PATH`) are a
+contract with it: keep them.

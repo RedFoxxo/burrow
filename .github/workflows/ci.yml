@@ -40,3 +40,34 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile minimal && rustup default stable
       - run: cargo test --locked
+
+  # install.sh and install.ps1 against the latest release, twice: the second run is an update.
+  # The default folders and the BURROW_* settings are a contract with the Mamami installer.
+  install-scripts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        run: shellcheck install.sh
+      - if: runner.os != 'Windows'
+        run: |
+          sh install.sh
+          sh install.sh
+          # Some runner images already have ~/.local/bin on PATH; then the profile is left alone.
+          case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) grep -qF "$HOME/.local/bin" "$HOME/.profile" ;; esac
+          "$HOME/.local/bin/burrow" --version | grep -E '^burrow [0-9]+\.[0-9]+\.[0-9]+$'
+      # Windows PowerShell 5.1, as `irm … | iex` runs on a stock Windows.
+      - if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Get-Content -Raw install.ps1 | Invoke-Expression
+          Get-Content -Raw install.ps1 | Invoke-Expression
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\burrow'
+          if (-not ([Environment]::GetEnvironmentVariable('Path', 'User') -split ';' -contains $dir)) { throw 'not on the user PATH' }
+          $version = & (Join-Path $dir 'burrow.exe') --version
+          if ($version -notmatch '^burrow \d+\.\d+\.\d+$') { throw "unexpected: $version" }
+          $version

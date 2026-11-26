@@ -20,10 +20,38 @@ memory while it runs.
 
 ## Install
 
-Download the file for your system from the
-[latest release](https://github.com/RedFoxxo/burrow/releases/latest) into a
-folder on your `PATH`. Each release also has `SHA256SUMS` to check the file
-against.
+Linux and macOS:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/RedFoxxo/burrow/main/install.sh | sh
+```
+
+Windows, in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/RedFoxxo/burrow/main/install.ps1 | iex
+```
+
+The script downloads the file for your system from the
+[latest release](https://github.com/RedFoxxo/burrow/releases/latest), checks
+it against the release's `SHA256SUMS`, and installs it as `burrow` in
+`~/.local/bin` (Windows: `%LOCALAPPDATA%\Programs\burrow`). If that folder is
+not on your `PATH` yet, it adds it: to `~/.profile` (and `~/.zprofile` on
+macOS), or to your user `PATH` on Windows. Log out and back in on Linux and
+macOS, or open a new terminal on Windows, then check with `burrow --version`.
+
+Run the same line again to update. Settings go to the script: `BURROW_VERSION`
+installs a given release, `BURROW_INSTALL_DIR` uses another folder, and
+`BURROW_NO_MODIFY_PATH=1` leaves your `PATH` alone, e.g.
+`curl -fsSL …/install.sh | BURROW_VERSION=2.0.0 sh`, or in PowerShell
+`$env:BURROW_VERSION = '2.0.0'` before `irm … | iex`.
+
+### By hand
+
+Download the file for your system from the latest release into a folder on your
+`PATH`, rename it to `burrow` (`burrow.exe` on Windows), and on Linux and macOS
+make it executable (`chmod +x burrow`). On macOS, a file downloaded with a
+browser needs `xattr -d com.apple.quarantine burrow` once before it starts.
 
 | System | File |
 |---|---|
@@ -31,35 +59,9 @@ against.
 | Linux arm64 | `burrow-linux-arm64` |
 | macOS, Apple silicon | `burrow-macos-arm64` |
 | macOS, Intel | `burrow-macos-x64` |
-| Windows x64 | `burrow-windows-x64.exe` |
+| Windows x64, also Windows on ARM | `burrow-windows-x64.exe` |
 
-Linux and macOS (pick your file in the URL):
-
-```sh
-mkdir -p ~/.local/bin
-curl -fsSL -o ~/.local/bin/burrow https://github.com/RedFoxxo/burrow/releases/latest/download/burrow-linux-x64
-chmod +x ~/.local/bin/burrow
-burrow --version
-```
-
-`~/.local/bin` must be on your `PATH`. On macOS, a file downloaded with a
-browser instead of `curl` needs `xattr -d com.apple.quarantine burrow` once
-before it starts.
-
-Windows, in PowerShell:
-
-```powershell
-$dir = "$env:LOCALAPPDATA\Programs\burrow"
-New-Item -ItemType Directory -Force $dir | Out-Null
-Invoke-WebRequest https://github.com/RedFoxxo/burrow/releases/latest/download/burrow-windows-x64.exe -OutFile "$dir\burrow.exe"
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-[Environment]::SetEnvironmentVariable('Path', "$userPath;$dir", 'User')
-```
-
-Open a new terminal, then check with `burrow --version`.
-
-To update, download the newer file over the old one. To build from source
-instead (needs Rust):
+To build from source instead (needs Rust):
 `cargo install --git https://github.com/RedFoxxo/burrow --tag v2.0.0 --locked`.
 
 **Coming from 1.x?** burrow 1.x ran through `npx` from the npm package
