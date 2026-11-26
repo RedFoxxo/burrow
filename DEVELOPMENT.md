@@ -110,10 +110,12 @@ Build steps:
 ]
 ```
 
-CMD arguments: `["mcp-proxy", "--pass-environment", "--", "burrow"]`. Without
-`--pass-environment`, mcp-proxy starts burrow without the container's
-variables, so burrow stops at "LEAFWIKI_URL is required" (tested with
-mcp-proxy 0.15.0 on `debian:trixie-slim`: 39 tools over SSE with the flag).
+CMD arguments: `["mcp-proxy", "--", "burrow"]`. Glama's image has the npm
+`mcp-proxy` (6.9.0), which passes the container's environment to burrow, so
+the placeholder `LEAFWIKI_URL` reaches it; without that placeholder burrow
+stops at "LEAFWIKI_URL is required". Glama joins the build steps into one
+`RUN` after cloning the repository into `/app`; this setup, rebuilt from a
+Glama build log, lists 39 tools over `/mcp`.
 
 Environment variables JSON schema (burrow answers `tools/list` with only the
 placeholder URL; it signs in on the first tool call):
