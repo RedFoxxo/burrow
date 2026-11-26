@@ -5,7 +5,7 @@
 #   mcpb/build.sh <version> <folder with the release files> <output .mcpb>
 #
 # One bundle serves every system: a universal macOS binary, the Windows
-# binary, and both Linux builds behind burrow-linux.sh.
+# binary, and both Linux builds; launch.sh starts the right one on macOS and Linux.
 set -eu
 
 version=$1
@@ -27,8 +27,8 @@ trap 'rm -rf "$stage"' EXIT
 mkdir "$stage/server"
 "$lipo" -create "$assets/burrow-macos-arm64" "$assets/burrow-macos-x64" -output "$stage/server/burrow"
 cp "$assets/burrow-windows-x64.exe" "$stage/server/burrow.exe"
-cp "$assets/burrow-linux-x64" "$assets/burrow-linux-arm64" "$root/mcpb/burrow-linux.sh" "$stage/server/"
-chmod 755 "$stage/server/burrow" "$stage/server/burrow-linux-x64" "$stage/server/burrow-linux-arm64" "$stage/server/burrow-linux.sh"
+cp "$assets/burrow-linux-x64" "$assets/burrow-linux-arm64" "$root/mcpb/launch.sh" "$stage/server/"
+chmod 755 "$stage/server/burrow" "$stage/server/burrow-linux-x64" "$stage/server/burrow-linux-arm64" "$stage/server/launch.sh"
 cp "$root/LICENSE" "$stage/"
 
 # The version, and the tools as the server lists them (tests/golden/ pins that list).

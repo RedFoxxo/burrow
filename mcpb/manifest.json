@@ -20,8 +20,8 @@
     "type": "binary",
     "entry_point": "server/burrow",
     "mcp_config": {
-      "command": "${__dirname}/server/burrow",
-      "args": [],
+      "command": "/bin/sh",
+      "args": ["${__dirname}/server/launch.sh"],
       "env": {
         "LEAFWIKI_URL": "${user_config.leafwiki_url}",
         "LEAFWIKI_USERNAME": "${user_config.username}",
@@ -30,11 +30,8 @@
       },
       "platform_overrides": {
         "win32": {
-          "command": "${__dirname}/server/burrow.exe"
-        },
-        "linux": {
-          "command": "/bin/sh",
-          "args": ["${__dirname}/server/burrow-linux.sh"]
+          "command": "${__dirname}/server/burrow.exe",
+          "args": []
         }
       }
     }

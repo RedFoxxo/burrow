@@ -3,6 +3,15 @@
 Versions follow [Semantic Versioning](https://semver.org/). The version lives in
 `Cargo.toml`.
 
+## 2.0.2 — 2026-11-26
+
+- **Fix:** the Claude Desktop bundle (`burrow.mcpb`) failed to start burrow
+  ("Permission denied") where the host extracts files without their execute
+  bit, as Claude Desktop on macOS does. On macOS and Linux the bundle now starts
+  burrow through `/bin/sh` and a launcher that restores the execute bit and
+  clears the download's quarantine flag. Each release now starts the bundle
+  that way on macOS and Linux before publishing it.
+
 ## 2.0.1 — 2026-11-26
 
 No change to the server. New ways to get it:

@@ -87,6 +87,8 @@ jobs:
           path: dist
           merge-multiple: true
       - run: sh mcpb/build.sh "${{ needs.version.outputs.version }}" dist burrow.mcpb
+      # As Claude Desktop extracts it on macOS: no execute bits, quarantine flag set.
+      - run: sh mcpb/smoke.sh burrow.mcpb
       - uses: actions/upload-artifact@v4
         with:
           name: burrow.mcpb
@@ -104,6 +106,8 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Start the bundle on Linux
+        run: sh mcpb/smoke.sh dist/burrow.mcpb
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}

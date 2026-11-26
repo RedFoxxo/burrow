@@ -53,8 +53,26 @@ update the token figures under "Tools" in `README.md`.
    into `## X.Y.Z — YYYY-MM-DD`.
 2. Commit, tag `vX.Y.Z`, push both.
 3. The `release` workflow checks that the tag matches `Cargo.toml` and the
-   changelog, runs the CI checks on the tag, builds the five binaries, and
-   publishes a GitHub Release with them, `SHA256SUMS` and the changelog section.
+   changelog, runs the CI checks on the tag, builds the five binaries and
+   `burrow.mcpb` (`mcpb/build.sh`), starts the bundle on macOS and Linux
+   (`mcpb/smoke.sh`), publishes a GitHub Release with the files, `SHA256SUMS`
+   and the changelog section, then publishes `server.json` to the MCP Registry
+   with the new version, bundle URL and checksum.
+4. `cargo publish` puts the crate `burrow-mcp` on crates.io (needs the
+   crates.io sign-in; not automated yet).
+
+The MCP Registry signs in with the workflow's own GitHub identity, so no token
+is stored; it only accepts names under `io.github.RedFoxxo/`. `server.json` in
+the repository holds the listing's text and settings; the workflow fills in
+the release.
+
+`mcpb/manifest.json` is the bundle's manifest (the settings Claude Desktop asks
+for); the build adds the version and the tool list from `tests/golden/`. On
+macOS and Linux the bundle starts `/bin/sh server/launch.sh`, never the binary
+directly: Claude Desktop on macOS extracts bundle files without the execute bit
+(mcpb issue #294) and may keep the quarantine flag, and the launcher fixes both
+and picks the Linux build for the CPU. `mcpb/smoke.sh` reproduces those
+conditions.
 
 The asset names (`burrow-linux-x64`, `burrow-linux-arm64`, `burrow-macos-x64`,
 `burrow-macos-arm64`, `burrow-windows-x64.exe`) are a contract with
