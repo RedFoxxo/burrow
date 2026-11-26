@@ -104,7 +104,7 @@
     },
     {
       "name": "read_search",
-      "description": "Full-text search over page titles, content and tags, best match first, with excerpts.",
+      "description": "Full-text search over page titles, content and tags, best match first, with excerpts. Use it to find pages by the words in them; for an exact title use read_find_title, for pages carrying given tags read_pages_by_tags.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -859,7 +859,7 @@
     },
     {
       "name": "write_convert",
-      "description": "Turn a page into a section (a folder-like page that holds children) or a section into a page; answers with the page.",
+      "description": "Turn an existing page into a section (a folder-like page that holds children) or a section into a page; answers with the page. Use it when a page should get children; to create a new section, use write_create_page with kind section. A section that still has children stays one: move them out first with write_move.",
       "inputSchema": {
         "type": "object",
         "properties": {

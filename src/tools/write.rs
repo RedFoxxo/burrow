@@ -460,7 +460,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "write_convert",
-            description: "Turn a page into a section (a folder-like page that holds children) or a section into a page; answers with the page.",
+            description: "Turn an existing page into a section (a folder-like page that holds children) or a section into a page; answers with the page. Use it when a page should get children; to create a new section, use write_create_page with kind section. A section that still has children stays one: move them out first with write_move.",
             fields: vec![params::page(), params::kind()],
             handler: handler!(|ctx, args| {
                 let p = with_page(ctx, &args.str("page")).await?;

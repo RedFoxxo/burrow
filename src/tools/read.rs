@@ -180,7 +180,7 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "read_search",
-            description: "Full-text search over page titles, content and tags, best match first, with excerpts.",
+            description: "Full-text search over page titles, content and tags, best match first, with excerpts. Use it to find pages by the words in them; for an exact title use read_find_title, for pages carrying given tags read_pages_by_tags.",
             fields: vec![
                 trimmed("query").nonempty().describe("Words to search for"),
                 integer("offset", Some(0), None)

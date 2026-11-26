@@ -151,13 +151,18 @@ pub fn success(data: Value) -> Answer {
 }
 
 /// What the AI should do next, for the LeafWiki errors that have one answer.
-fn next_step(code: &str) -> Option<&'static str> {
+/// `request` is the failed call (`DELETE /api/pages/…`), for codes several routes share.
+fn next_step(code: &str, request: Option<&str>) -> Option<&'static str> {
     match code {
         "page_version_conflict" => Some(
             "Someone changed the page after you read it: read it again, check their change, and only then retry with the new version.",
         ),
-        "page_has_children" => Some(
+        // Deleting a page and turning a section into a page both refuse one with children.
+        "page_has_children" if request.is_some_and(|r| r.starts_with("DELETE ")) => Some(
             "The page has child pages: delete them first, or pass recursive: true only if the user asked to delete everything below it.",
+        ),
+        "page_has_children" => Some(
+            "The section still has child pages: move them elsewhere first (write_move), or leave it a section.",
         ),
         _ => None,
     }
@@ -180,7 +185,7 @@ pub fn failure(summary: impl Into<String>, error: Option<&WikiErr>) -> ToolResul
             lines.push(format!("status: {}{code}", e.status));
         }
         let next = match e.code.as_deref() {
-            Some(code) => next_step(code),
+            Some(code) => next_step(code, e.request.as_deref()),
             None if e.status == 403 => Some(
                 "The signed-in account may not do this (editors and admins can change pages; some reads are admin-only).",
             ),

@@ -216,7 +216,7 @@ the MCP tool annotations, and delete tools destructive.
 | `write_` | Creates, changes, moves and copies pages and files | ask |
 | `delete_` | Deletes pages and files | ask |
 
-39 tools, about 5,000 tokens of tool definitions; `BURROW_READ_ONLY=true`
+39 tools, about 5,100 tokens of tool definitions; `BURROW_READ_ONLY=true`
 leaves the 20 read tools, about 2,200. Pages are named by id or by path
 (`docs/runbooks/deploy`).
 

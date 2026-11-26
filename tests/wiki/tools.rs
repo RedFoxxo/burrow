@@ -385,6 +385,19 @@ fn structure(ed: &mut Burrow) {
         .text,
         "already a section",
     );
+    // A section that still has children stays one; the hint is about moving them, not deleting.
+    let refused = ed.call(
+        "write_convert",
+        json!({ "page": "runbooks", "kind": "page" }),
+    );
+    assert!(refused.is_error);
+    assert_re(&refused.text, "page_has_children");
+    assert_re(&refused.text, "write_move");
+    assert!(
+        !refused.text.contains("recursive: true"),
+        "{}",
+        refused.text
+    );
 
     let copy = ed.must(
         "write_copy",

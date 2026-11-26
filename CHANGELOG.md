@@ -3,6 +3,15 @@
 Versions follow [Semantic Versioning](https://semver.org/). The version lives in
 `Cargo.toml`.
 
+## 2.0.4 — 2026-11-26
+
+- **Fix:** turning a section that still has child pages into a page failed
+  with advice meant for deleting (pass `recursive: true`), which pointed the AI
+  at deleting pages. It now says to move the children out first with
+  `write_move`, or to leave it a section.
+- `read_search` and `write_convert` say when to use them and which tool to use
+  instead. The tool list grows by about 80 tokens, to about 5,100.
+
 ## 2.0.3 — 2026-11-26
 
 - Tool descriptions say what each tool answers, when to use it and which
